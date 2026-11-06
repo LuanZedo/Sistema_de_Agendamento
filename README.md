@@ -28,17 +28,17 @@ O **HoraCerta** é uma solução web voltada para profissionais autônomos e peq
 -   **Hugo Ferreira**
     
 
-## 🛠️ Tecnologias Utilizadas
+## Tecnologias Utilizadas
 
--   **Frontend:** HTML5, CSS3, JavaScript
+-   **Frontend:** 
     
--   **Backend:** Node.js
+-   **Backend:** 
     
--   **Banco de Dados:** PostgreSQL
+-   **Banco de Dados:**
     
--   **Gestão de Projeto:** Trello
+-   **Gestão de Projeto:**
     
--   **Modelagem e Protótipos:** Draw.io
+-   **Modelagem e Protótipos:**
     
 
 ## Principais Funcionalidades
