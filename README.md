@@ -30,15 +30,15 @@ O **HoraCerta** é uma solução web voltada para profissionais autônomos e peq
 
 ## Tecnologias Utilizadas
 
--   **Frontend:** 
+-   **Frontend:** HTML5, CSS3 / Tailwind, JavaScript (Mobile-First)
     
--   **Backend:** 
+-   **Backend:** Node.js, TypeScript, Express, Zod (Validação de Dados) — [`/backend`](./backend)
     
--   **Banco de Dados:**
+-   **Banco de Dados:** SQLite / PostgreSQL com Prisma ORM e Scripts SQL (`DDL` e `DML` em [`/backend/database`](./backend/database))
     
--   **Gestão de Projeto:**
+-   **Gestão de Projeto:** Scrum / Metodologia Ágil (Trello)
     
--   **Modelagem e Protótipos:**
+-   **Modelagem e Protótipos:** UML (Diagramas de Casos de Uso, Classes e DER)
     
 
 ## Principais Funcionalidades
@@ -56,13 +56,15 @@ O **HoraCerta** é uma solução web voltada para profissionais autônomos e peq
 
 ## Documentação e Modelagem UML
 
-A documentação arquitetural completa do projeto encontra-se na pasta [`/docs`]():
+A documentação arquitetural completa do projeto encontra-se nas pastas [`/docs`](./docs) e [`/backend`](./backend/README.md):
 
 1.  **Diagrama de Casos de Uso:** Mapeamento de atores (Cliente e Prestador) e suas interações com o sistema.
     
-2.  **Diagrama de Classes:** Estrutura das entidades (`Cliente`, `Profissional`, `Serviço`, `Agendamento`) e seus atributos/métodos.
+2.  **Diagrama de Classes e DER:** Estrutura das entidades (`Cliente`, `Profissional`, `Serviço`, `Agendamento`, `BloqueioAgenda`) e seus atributos/métodos.
     
 3.  **Protótipos de Interface:** Telas projetadas para seleção de serviços, escolha de horários e dashboard do profissional.
+    
+4.  **Documentação da API para o Frontend:** Guia completo passo a passo (Tela por Tela) disponível em [`/backend/README.md`](./backend/README.md).
     
 
 ## Capturas de Tela / Protótipos
@@ -74,8 +76,25 @@ A documentação arquitetural completa do projeto encontra-se na pasta [`/docs`]
 ## Instruções de Instalação e Execução
 
 ### Pré-requisitos
+- [Node.js](https://nodejs.org/) (v18 ou superior)
 
-### Passo a Passo
+### Passo a Passo (Backend e Banco de Dados)
+
+```bash
+# 1. Acessar a pasta do backend
+cd backend
+
+# 2. Instalar as dependências
+npm install
+
+# 3. Criar as tabelas do banco de dados e popular com os dados iniciais do protótipo
+npm run setup
+
+# 4. Iniciar o servidor da API em http://localhost:3333
+npm run dev
+```
+
+> 💡 **Para a equipe de Frontend:** Consulte o arquivo [`backend/README.md`](./backend/README.md) para ver os exemplos prontos de `fetch` e respostas JSON para cada tela do protótipo!
 
 ## Planejamento e Gestão do Projeto
 

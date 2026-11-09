@@ -1,0 +1,117 @@
+// ============================================================================
+// Prisma Schema - Sistema HoraCerta
+// Baseado no Diagrama de Classes UML, Protótipo de Telas e Requisitos (RF01-RF05)
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Entidade: Profissional (Barbeiro / Prestador de Serviço)
+// Relacionamentos no Diagrama UML:
+// - Profissional "1" oferece "0..*" Servico
+// - Profissional "1" recebe "0..*" Agendamento
+model Profissional {
+  id                      Int              @id @default(autoincrement())
+  nome                    String
+  telefone                String
+  email                   String           @unique
+  avaliacao               Float            @default(5.0) // Exibido na Tela 2 (ex: 4.9, 4.8)
+  totalAtendimentos       Int              @default(0)   // Exibido na Tela 2 (ex: 128 atendimentos)
+  horarioInicioExpediente String           @default("08:00")
+  horarioFimExpediente    String           @default("18:00")
+  ativo                   Boolean          @default(true)
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+
+  servicos                Servico[]
+  agendamentos            Agendamento[]
+  bloqueios               BloqueioAgenda[]
+
+  @@map("profissionais")
+}
+
+// Entidade: Servico (RF01 - Cadastro, edição e listagem de serviços)
+// Relacionamentos no Diagrama UML:
+// - Servico "1" corresponde a "0..*" Agendamento
+model Servico {
+  id             Int           @id @default(autoincrement())
+  nome           String
+  descricao      String        @default("")
+  preco          Float         // Em R$ (ex: 40.00, 30.00, 65.00)
+  duracao        Int           // Em minutos (ex: 30, 20, 50)
+  ativo          Boolean       @default(true)
+  profissionalId Int?          // Opcional: permite serviço geral da barbearia ou específico de 1 profissional
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  profissional   Profissional? @relation(fields: [profissionalId], references: [id], onDelete: SetNull)
+  agendamentos   Agendamento[]
+
+  @@map("servicos")
+}
+
+// Entidade: Cliente
+// Relacionamentos no Diagrama UML:
+// - Cliente "1" realiza "0..*" Agendamento
+model Cliente {
+  id           Int           @id @default(autoincrement())
+  nome         String
+  telefone     String        @unique // WhatsApp usado para identificar o cliente na Tela 2
+  email        String?       // Opcional, pois o formulário rápido (Tela 2) pede apenas Nome e WhatsApp
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  agendamentos Agendamento[]
+
+  @@map("clientes")
+}
+
+// Entidade: Agendamento (RF02, RF03, RF04, RF05)
+// Status possíveis (Design System): PENDENTE | CONFIRMADO | CANCELADO
+model Agendamento {
+  id                 Int          @id @default(autoincrement())
+  data               String       // Formato YYYY-MM-DD (ex: "2025-11-12")
+  horario            String       // Formato HH:mm de início (ex: "11:00")
+  horarioFim         String       // Formato HH:mm calculado pela duração do serviço (ex: "11:30")
+  status             String       @default("CONFIRMADO") // PENDENTE | CONFIRMADO | CANCELADO
+  canceladoPor       String?      // CLIENTE | PROFISSIONAL (RF05)
+  motivoCancelamento String?
+  observacoes        String?
+  clienteId          Int
+  profissionalId     Int
+  servicoId          Int
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  cliente            Cliente      @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  profissional       Profissional @relation(fields: [profissionalId], references: [id], onDelete: Cascade)
+  servico            Servico      @relation(fields: [servicoId], references: [id], onDelete: Restrict)
+
+  // Índice composto para otimizar consulta de agenda e verificação de choque de horários (RNF02 < 2s)
+  @@index([profissionalId, data, status])
+  @@index([clienteId, data])
+  @@map("agendamentos")
+}
+
+// Entidade Auxiliar: BloqueioAgenda
+// Suporta o Caso de Uso "Bloquear horários ocupados" e o item "Bloquear horários" do menu (Tela 3)
+model BloqueioAgenda {
+  id             Int          @id @default(autoincrement())
+  data           String       // Formato YYYY-MM-DD
+  horarioInicio  String       // Formato HH:mm
+  horarioFim     String       // Formato HH:mm
+  motivo         String       @default("Horário bloqueado pelo profissional")
+  profissionalId Int
+  createdAt      DateTime     @default(now())
+
+  profissional   Profissional @relation(fields: [profissionalId], references: [id], onDelete: Cascade)
+
+  @@index([profissionalId, data])
+  @@map("bloqueios_agenda")
+}
