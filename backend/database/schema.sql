@@ -82,6 +82,14 @@ CREATE TABLE IF NOT EXISTS bloqueios_agenda (
         FOREIGN KEY (profissional_id) REFERENCES profissionais(id) ON DELETE CASCADE
 );
 
+-- 6. Configurações gerais do estabelecimento
+CREATE TABLE IF NOT EXISTS configuracoes (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    nome VARCHAR(120) NOT NULL DEFAULT 'HoraCerta',
+    telefone VARCHAR(30) NOT NULL DEFAULT '',
+    horario VARCHAR(100) NOT NULL DEFAULT '08:00-18:00'
+);
+
 -- Índices para Desempenho (RNF02: Carregamento < 2s sob 4G/5G)
 CREATE INDEX IF NOT EXISTS idx_agendamentos_prof_data_status
     ON agendamentos(profissional_id, data, status);

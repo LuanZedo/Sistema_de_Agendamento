@@ -47,6 +47,13 @@ app.get('/', (_req, res) => {
       clientes: {
         listar: 'GET /api/clientes',
       },
+      relatorios: {
+        listar: 'GET /api/relatorios?dataInicio=YYYY-MM-DD&dataFim=YYYY-MM-DD&status=CONFIRMADO',
+      },
+      configuracoes: {
+        buscar: 'GET /api/configuracoes',
+        atualizar: 'PUT /api/configuracoes',
+      },
     },
   });
 });

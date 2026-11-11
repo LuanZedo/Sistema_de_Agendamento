@@ -375,8 +375,8 @@
 </body>
     <script src="script.js"></script>
     <script>
-        // Configure API_BASE_URL before this page's scripts when the API is hosted elsewhere.
-        window.API_BASE_URL = window.API_BASE_URL || '';
+        // Override API_BASE_URL before this script when the API is hosted elsewhere.
+        window.API_BASE_URL = window.API_BASE_URL || 'http://localhost:3333';
 
         const dashboardSections = {
             servicos: { title: 'Serviços', endpoint: '/api/servicos' },
@@ -388,6 +388,10 @@
 
         function escapeHtml(value) {
             return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+        }
+
+        function displayName(value) {
+            return value && typeof value === 'object' ? value.nome || value.name || '' : value;
         }
 
         async function apiRequest(path, options = {}) {
@@ -410,7 +414,7 @@
                     data = JSON.parse(text);
                 } catch {
                     if (response.ok) throw new Error(`A API (${endpoint}) retornou uma resposta inválida.`);
-                    data = { message: text };
+                    if (!/^\s*</.test(text)) data = { message: text };
                 }
             }
             if (!response.ok) {
@@ -455,13 +459,38 @@
             }
             const payload = Array.isArray(result) ? result : (result?.dados || result?.data || result?.items || result?.[section] || []);
             const records = Array.isArray(payload) ? payload : [];
-            const rows = records.length
-                ? `<div class="service-list">${records.map(record => `<article class="service-card"><div class="service-info"><h4>${escapeHtml(record.nome || record.servico || record.titulo || record.cliente || 'Registro')}</h4><p>${escapeHtml(record.descricao || record.data || record.horario || record.status || '')}${record.valor != null ? ` • R$ ${escapeHtml(record.valor)}` : ''}</p></div></article>`).join('')}</div>`
-                : '<p>Nenhum registro encontrado.</p>';
+            const report = section === 'relatorios' && result?.resumo ? result : null;
+            const reportRows = report?.agendamentos || [];
+            const reportSummary = report?.resumo;
+            const rows = report
+                ? `<div class="service-list">
+                    ${[
+                        ['Agendamentos', reportSummary.total],
+                        ['Confirmados', reportSummary.confirmados],
+                        ['Pendentes', reportSummary.pendentes],
+                        ['Cancelados', reportSummary.cancelados],
+                        ['Faturamento previsto', `R$ ${Number(reportSummary.faturamentoPrevisto || 0).toFixed(2).replace('.', ',')}`]
+                    ].map(([label, value]) => `<article class="service-card"><div class="service-info"><h4>${escapeHtml(label)}</h4><p>${escapeHtml(value)}</p></div></article>`).join('')}
+                    ${reportRows.length ? reportRows.map(record => `<article class="service-card"><div class="service-info"><h4>${escapeHtml(record.cliente)} — ${escapeHtml(record.servico)}</h4><p>${escapeHtml(record.data)} às ${escapeHtml(record.horario)} • ${escapeHtml(record.profissional)} • ${escapeHtml(record.status)} • R$ ${Number(record.valor || 0).toFixed(2).replace('.', ',')}</p></div></article>`).join('') : '<p>Nenhum agendamento encontrado.</p>'}
+                </div>`
+                : records.length
+                ? `<div class="service-list">${records.map(record => {
+                    const client = displayName(record.cliente);
+                    const service = displayName(record.servico);
+                    const title = section === 'agendamentos'
+                        ? [client, service].filter(Boolean).join(' — ') || record.nome || 'Agendamento'
+                        : record.nome || service || record.titulo || client || 'Registro';
+                    const description = section === 'agendamentos'
+                        ? [record.data, record.horario, record.status].filter(Boolean).join(' • ')
+                        : record.descricao || record.data || record.horario || record.status || '';
+                    return `<article class="service-card"><div class="service-info"><h4>${escapeHtml(title)}</h4><p>${escapeHtml(description)}${record.valor != null ? ` • R$ ${escapeHtml(record.valor)}` : ''}</p></div></article>`;
+                }).join('')}</div>`
+                : loadError || section === 'configuracoes' ? '' : '<p>Nenhum registro encontrado.</p>';
+            const settings = section === 'configuracoes' && result ? result : {};
             const forms = {
                 servicos: `<form class="user-form" onsubmit="saveDashboardRecord(event, 'servicos')"><h3>Novo serviço</h3><div class="form-group"><label>Nome</label><input name="nome" required></div><div class="form-group"><label>Descrição</label><input name="descricao"></div><div class="form-group"><label>Valor (R$)</label><input name="valor" type="number" min="0" step="0.01" required></div><div class="form-group"><label>Duração (minutos)</label><input name="duracao" type="number" min="1" required></div><button class="btn-primary" type="submit">Salvar serviço</button></form>`,
                 bloqueios: `<form class="user-form" onsubmit="saveDashboardRecord(event, 'bloqueios')"><h3>Novo bloqueio</h3><div class="form-group"><label>Data</label><input name="data" type="date" required></div><div class="form-group"><label>Horário inicial</label><input name="inicio" type="time" required></div><div class="form-group"><label>Horário final</label><input name="fim" type="time" required></div><div class="form-group"><label>Motivo</label><input name="motivo"></div><button class="btn-primary" type="submit">Bloquear horário</button></form>`,
-                configuracoes: `<form class="user-form" onsubmit="saveDashboardRecord(event, 'configuracoes', 'PUT')"><h3>Atualizar configurações</h3><div class="form-group"><label>Nome do estabelecimento</label><input name="nome" required></div><div class="form-group"><label>Telefone</label><input name="telefone" type="tel"></div><div class="form-group"><label>Horário de funcionamento</label><input name="horario"></div><button class="btn-primary" type="submit">Salvar configurações</button></form>`
+                configuracoes: `<form class="user-form" onsubmit="saveDashboardRecord(event, 'configuracoes', 'PUT')"><h3>Atualizar configurações</h3><div class="form-group"><label>Nome do estabelecimento</label><input name="nome" value="${escapeHtml(settings.nome || '')}" required></div><div class="form-group"><label>Telefone</label><input name="telefone" type="tel" value="${escapeHtml(settings.telefone || '')}"></div><div class="form-group"><label>Horário de funcionamento</label><input name="horario" value="${escapeHtml(settings.horario || '')}"></div><button class="btn-primary" type="submit">Salvar configurações</button></form>`
             };
             workspace.innerHTML = `<h2>${config.title}</h2>${loadError ? `<p role="alert">${escapeHtml(loadError)}</p>` : ''}${rows}${forms[section] || ''}<p id="dashboard-feedback" role="status"></p>`;
         }
@@ -701,7 +730,7 @@
                     const times = [...new Set([...fallbackSlots, ...grouped.keys()])].sort();
                     table.innerHTML = times.map(time => `<tr><td class="time-col">${escapeHtml(time)}</td>${Array.from({ length: 6 }, (_, index) => {
                         const record = (grouped.get(time) || []).find(item => { const d = new Date(item.data); return !item.data || Number.isNaN(d.getTime()) || d.getDay() === (index + 1) % 7; });
-                        return `<td>${record ? `<div class="booking-card status-${escapeHtml(record.status || 'confirmed')}"><strong>${escapeHtml(record.nome || record.cliente || 'Cliente')}</strong><p>${escapeHtml(record.servico || '')}</p></div>` : ''}</td>`;
+                        return `<td>${record ? `<div class="booking-card status-${escapeHtml(record.status || 'confirmed')}"><strong>${escapeHtml(record.nome || displayName(record.cliente) || 'Cliente')}</strong><p>${escapeHtml(displayName(record.servico))}</p></div>` : ''}</td>`;
                     }).join('')}</tr>`).join('');
                 } catch (_) { /* mantém a agenda de exemplo quando não há conexão */ }
             }

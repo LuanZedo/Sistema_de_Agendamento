@@ -115,3 +115,12 @@ model BloqueioAgenda {
   @@index([profissionalId, data])
   @@map("bloqueios_agenda")
 }
+
+model Configuracao {
+  id       Int    @id @default(1)
+  nome     String @default("HoraCerta")
+  telefone String @default("")
+  horario  String @default("08:00-18:00")
+
+  @@map("configuracoes")
+}

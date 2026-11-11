@@ -94,6 +94,22 @@ npm run setup
 npm run dev
 ```
 
+### Para quem vai trabalhar no Frontend
+
+O frontend e a API são dois servidores separados. Para desenvolver e testar a integração:
+
+1. **Terminal 1 — iniciar o backend** (na primeira vez, instale e prepare o banco):
+   ```bash
+   cd backend
+   npm install
+   npm run setup
+   npm run dev
+   ```
+   Deixe esse terminal aberto. A API ficará disponível em `http://localhost:3333`.
+2. **Terminal 2 — abrir o frontend:** na raiz do repositório, inicie o Live Server pelo VS Code abrindo `frontend/index.html`. Acesse `http://127.0.0.1:5501/frontend/`.
+
+O frontend já usa `http://localhost:3333` como endereço padrão da API. Se a API estiver em outro endereço, defina `window.API_BASE_URL` antes do script principal em `frontend/index.html`. Sem o backend ativo, as telas que dependem de dados da API não funcionarão.
+
 > 💡 **Para a equipe de Frontend:** Consulte o arquivo [`backend/README.md`](./backend/README.md) para ver os exemplos prontos de `fetch` e respostas JSON para cada tela do protótipo!
 
 ## Planejamento e Gestão do Projeto

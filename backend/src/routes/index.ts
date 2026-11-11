@@ -4,6 +4,8 @@ import { ProfissionalController } from '../controllers/ProfissionalController';
 import { AgendamentoController } from '../controllers/AgendamentoController';
 import { BloqueioController } from '../controllers/BloqueioController';
 import { ClienteController } from '../controllers/ClienteController';
+import { RelatorioController } from '../controllers/RelatorioController';
+import { ConfiguracaoController } from '../controllers/ConfiguracaoController';
 
 export const routes = Router();
 
@@ -43,3 +45,10 @@ routes.delete('/bloqueios/:id', BloqueioController.remover);
 // 5. Rotas de Clientes
 // ============================================================================
 routes.get('/clientes', ClienteController.listar);
+
+// ============================================================================
+// 6. Relatórios e configurações do estabelecimento
+// ============================================================================
+routes.get('/relatorios', RelatorioController.listar);
+routes.get('/configuracoes', ConfiguracaoController.buscar);
+routes.put('/configuracoes', ConfiguracaoController.atualizar);

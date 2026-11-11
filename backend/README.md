@@ -26,7 +26,7 @@ npm run dev
 ```
 
 ### Outros comandos úteis:
-* `npm test` — Executa os 6 testes automatizados validando **RF01 a RF05** e bloqueio de horários.
+* `npm test` — Executa os testes automatizados de **RF01 a RF05**, relatórios e configurações.
 * `npm run db:studio` — Abre um painel visual no navegador (Prisma Studio) para ver e editar as tabelas do banco.
 * `npm run db:seed` — Reseta o banco de dados para os dados originais do protótipo do PDF.
 
@@ -284,6 +284,25 @@ Permite que o cliente (ou o profissional no painel) cancele o agendamento. Assim
   ```
 * **Remover Bloqueio (`DELETE http://localhost:3333/api/bloqueios/:id`)**
 
+#### E. Consultar Relatórios
+* **Rota:** `GET http://localhost:3333/api/relatorios?dataInicio=2025-11-01&dataFim=2025-11-30`
+* Os filtros `dataInicio`, `dataFim` e `status` são opcionais. A resposta inclui o resumo dos agendamentos, faturamento previsto e os registros do período.
+
+#### F. Consultar e Atualizar Configurações
+* **Consultar:** `GET http://localhost:3333/api/configuracoes`
+* **Atualizar:** `PUT http://localhost:3333/api/configuracoes`
+  ```javascript
+  await fetch('http://localhost:3333/api/configuracoes', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      nome: 'Barbearia HoraCerta',
+      telefone: '(11) 99999-0000',
+      horario: '08:00-18:00'
+    })
+  });
+  ```
+
 ---
 
 ## 3. Diagrama Entidade-Relacionamento (DER)
@@ -346,6 +365,13 @@ erDiagram
         string motivo
         int profissionalId FK
     }
+
+    CONFIGURACAO {
+        int id PK
+        string nome
+        string telefone
+        string horario
+    }
 ```
 
 ---
@@ -369,7 +395,9 @@ horacerta-backend/
 │   │   ├── ProfissionalController.ts  # RF02, RF03, RF04: Disponibilidade e Agenda
 │   │   ├── AgendamentoController.ts   # RF02, RF03, RF04, RF05: Agendar, confirmar, cancelar
 │   │   ├── BloqueioController.ts      # Caso de Uso: Bloquear horários ocupados
-│   │   └── ClienteController.ts       # Consulta de clientes e histórico
+│   │   ├── ClienteController.ts       # Consulta de clientes e histórico
+│   │   ├── RelatorioController.ts     # Resumo e listagem de agendamentos
+│   │   └── ConfiguracaoController.ts  # Leitura e atualização das configurações
 │   ├── routes/
 │   │   └── index.ts              # Definição das rotas da API REST
 │   ├── services/

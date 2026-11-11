@@ -5,6 +5,8 @@ import { ServicoController } from '../controllers/ServicoController';
 import { ProfissionalController } from '../controllers/ProfissionalController';
 import { AgendamentoController } from '../controllers/AgendamentoController';
 import { BloqueioController } from '../controllers/BloqueioController';
+import { RelatorioController } from '../controllers/RelatorioController';
+import { ConfiguracaoController } from '../controllers/ConfiguracaoController';
 
 /**
  * Helper leve para invocar controllers Express em memória durante os testes
@@ -50,6 +52,7 @@ describe('HoraCerta Backend - Testes Automatizados (RF01 a RF05)', () => {
   before(async () => {
     await prisma.agendamento.deleteMany();
     await prisma.bloqueioAgenda.deleteMany();
+    await prisma.configuracao.deleteMany();
     await prisma.servico.deleteMany();
     await prisma.cliente.deleteMany();
     await prisma.profissional.deleteMany();
@@ -67,6 +70,7 @@ describe('HoraCerta Backend - Testes Automatizados (RF01 a RF05)', () => {
   });
 
   after(async () => {
+    await prisma.configuracao.deleteMany();
     await prisma.$disconnect();
   });
 
@@ -223,5 +227,31 @@ describe('HoraCerta Backend - Testes Automatizados (RF01 a RF05)', () => {
     assert.equal(resDisp.body.horariosDisponiveis.includes('12:00'), false);
     assert.equal(resDisp.body.horariosDisponiveis.includes('12:30'), false);
     assert.equal(resDisp.body.horariosDisponiveis.includes('13:00'), true);
+  });
+
+  test('Dashboard - Deve gerar relatório e persistir as configurações do estabelecimento', async () => {
+    const resRelatorio = await callController(RelatorioController.listar, {
+      query: { dataInicio: '2025-11-12', dataFim: '2025-11-12' },
+    });
+    assert.equal(resRelatorio.status, 200);
+    assert.equal(resRelatorio.body.resumo.total, 1);
+    assert.equal(resRelatorio.body.resumo.cancelados, 1);
+    assert.equal(resRelatorio.body.agendamentos[0].cliente, 'João Silva');
+
+    const resFiltroInvalido = await callController(RelatorioController.listar, {
+      query: { dataInicio: '2025-11-13', dataFim: '2025-11-12' },
+    });
+    assert.equal(resFiltroInvalido.status, 400);
+
+    const resAtualizacao = await callController(ConfiguracaoController.atualizar, {
+      body: { nome: 'Barbearia HoraCerta', telefone: '(11) 99999-0000', horario: '09:00-18:00' },
+    });
+    assert.equal(resAtualizacao.status, 200);
+
+    const resConfiguracao = await callController(ConfiguracaoController.buscar);
+    assert.equal(resConfiguracao.status, 200);
+    assert.equal(resConfiguracao.body.nome, 'Barbearia HoraCerta');
+    assert.equal(resConfiguracao.body.telefone, '(11) 99999-0000');
+    assert.equal(resConfiguracao.body.horario, '09:00-18:00');
   });
 });
