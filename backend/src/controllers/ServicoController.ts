@@ -122,4 +122,30 @@ export class ServicoController {
       res.status(500).json({ erro: 'Erro ao editar serviço.', detalhes: String(error) });
     }
   }
+
+  // DELETE /servicos/:id - Desativa o serviço sem remover o histórico de agendamentos
+  static async remover(req: Request, res: Response): Promise<void> {
+    try {
+      const id = Number(req.params.id);
+      if (!Number.isInteger(id) || id <= 0) {
+        res.status(400).json({ erro: 'Informe um serviço válido para remoção.' });
+        return;
+      }
+
+      const existente = await prisma.servico.findUnique({ where: { id } });
+      if (!existente || !existente.ativo) {
+        res.status(404).json({ erro: 'Serviço não encontrado.' });
+        return;
+      }
+
+      await prisma.servico.update({
+        where: { id },
+        data: { ativo: false },
+      });
+
+      res.json({ mensagem: 'Serviço removido com sucesso.' });
+    } catch (error) {
+      res.status(500).json({ erro: 'Erro ao remover serviço.', detalhes: String(error) });
+    }
+  }
 }

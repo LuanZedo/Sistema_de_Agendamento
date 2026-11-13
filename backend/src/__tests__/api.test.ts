@@ -229,6 +229,69 @@ describe('HoraCerta Backend - Testes Automatizados (RF01 a RF05)', () => {
     assert.equal(resDisp.body.horariosDisponiveis.includes('13:00'), true);
   });
 
+  test('Caso de Uso - Deve bloquear o dia inteiro e remover todos os horários disponíveis', async () => {
+    const data = '2099-12-31';
+    const resBloq = await callController(BloqueioController.criar, {
+      body: {
+        profissionalId: profId,
+        data,
+        diaInteiro: true,
+        motivo: 'Folga',
+      },
+    });
+
+    assert.equal(resBloq.status, 201);
+    assert.equal(resBloq.body.bloqueio.horarioInicio, '00:00');
+    assert.equal(resBloq.body.bloqueio.horarioFim, '23:59');
+
+    try {
+      const resDisp = await callController(ProfissionalController.consultarDisponibilidade, {
+        params: { id: String(profId) },
+        query: { data, servicoId: String(servicoCorteId) },
+      });
+      assert.deepEqual(resDisp.body.horariosDisponiveis, []);
+    } finally {
+      await prisma.bloqueioAgenda.delete({ where: { id: resBloq.body.bloqueio.id } });
+    }
+  });
+
+  test('Caso de Uso - Deve permitir consultar e editar um bloqueio existente', async () => {
+    const resCriado = await callController(BloqueioController.criar, {
+      body: {
+        profissionalId: profId,
+        data: '2099-12-30',
+        horarioInicio: '12:00',
+        horarioFim: '13:00',
+        motivo: 'Almoço',
+      },
+    });
+    const id = resCriado.body.bloqueio.id;
+
+    try {
+      const resConsulta = await callController(BloqueioController.buscarPorId, {
+        params: { id: String(id) },
+      });
+      assert.equal(resConsulta.status, 200);
+      assert.equal(resConsulta.body.motivo, 'Almoço');
+
+      const resEdicao = await callController(BloqueioController.editar, {
+        params: { id: String(id) },
+        body: {
+          profissionalId: profId,
+          data: '2099-12-30',
+          diaInteiro: true,
+          motivo: 'Folga',
+        },
+      });
+      assert.equal(resEdicao.status, 200);
+      assert.equal(resEdicao.body.bloqueio.horarioInicio, '00:00');
+      assert.equal(resEdicao.body.bloqueio.horarioFim, '23:59');
+      assert.equal(resEdicao.body.bloqueio.motivo, 'Folga');
+    } finally {
+      await prisma.bloqueioAgenda.delete({ where: { id } });
+    }
+  });
+
   test('Dashboard - Deve gerar relatório e persistir as configurações do estabelecimento', async () => {
     const resRelatorio = await callController(RelatorioController.listar, {
       query: { dataInicio: '2025-11-12', dataFim: '2025-11-12' },

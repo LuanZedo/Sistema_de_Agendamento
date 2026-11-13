@@ -16,6 +16,7 @@ routes.get('/servicos', ServicoController.listar);
 routes.get('/servicos/:id', ServicoController.buscarPorId);
 routes.post('/servicos', ServicoController.cadastrar);
 routes.put('/servicos/:id', ServicoController.editar);
+routes.delete('/servicos/:id', ServicoController.remover);
 
 // ============================================================================
 // 2. Rotas de Profissionais, Disponibilidade e Painel de Agenda (RF02, RF03, RF04)
@@ -38,7 +39,9 @@ routes.patch('/agendamentos/:id/cancelar', AgendamentoController.cancelar);
 // 4. Rotas de Bloqueio de Horários (Caso de Uso: Bloquear horários ocupados)
 // ============================================================================
 routes.get('/bloqueios', BloqueioController.listar);
+routes.get('/bloqueios/:id', BloqueioController.buscarPorId);
 routes.post('/bloqueios', BloqueioController.criar);
+routes.put('/bloqueios/:id', BloqueioController.editar);
 routes.delete('/bloqueios/:id', BloqueioController.remover);
 
 // ============================================================================

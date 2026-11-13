@@ -282,7 +282,17 @@ Permite que o cliente (ou o profissional no painel) cancele o agendamento. Assim
     })
   });
   ```
+* Para bloquear um dia inteiro (folga), envie `diaInteiro: true`; os horários são definidos automaticamente como `00:00` a `23:59`. O bloqueio do dia é recusado com `409 Conflict` se já houver agendamentos pendentes ou confirmados nessa data:
+  ```json
+  {
+    "profissionalId": 1,
+    "data": "2025-11-15",
+    "diaInteiro": true,
+    "motivo": "Folga"
+  }
+  ```
 * **Remover Bloqueio (`DELETE http://localhost:3333/api/bloqueios/:id`)**
+* **Consultar e editar bloqueio:** `GET http://localhost:3333/api/bloqueios/:id` e `PUT http://localhost:3333/api/bloqueios/:id`. O corpo do `PUT` aceita os mesmos campos da criação; para um dia inteiro, envie `diaInteiro: true`.
 
 #### E. Consultar Relatórios
 * **Rota:** `GET http://localhost:3333/api/relatorios?dataInicio=2025-11-01&dataFim=2025-11-30`
