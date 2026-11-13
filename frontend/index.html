@@ -1567,7 +1567,7 @@
         (() => {
             const fallbackSlots = ['09:00', '09:30', '10:00', '10:30', '11:00', '14:00', '14:30', '15:00', '15:30'];
             const state = { service: 'Corte Masculino', serviceId: null, price: 40, duration: '30 min', professional: 'Lucas Almeida', professionalId: null, date: new Date(), time: '11:00', month: new Date() };
-            const agendaState = { date: new Date(2025, 10, 12), view: 'week', requestId: 0 };
+            const agendaState = { date: new Date(), view: 'week', requestId: 0 };
             let blockedClientDates = new Set();
             let availabilityRequestId = 0;
             let clientBlocksRequestId = 0;
@@ -1588,6 +1588,42 @@
                 if (typeof window.showNotification === 'function') window.showNotification(message);
                 else alert(message);
             };
+            function renderClientServices() {
+                const list = document.querySelector('.service-list');
+                if (!list) return;
+
+                const previouslySelectedServiceId = state.serviceId;
+                const availableServices = serviceOptions.filter(item => item.ativo !== false);
+                if (!availableServices.length) {
+                    list.innerHTML = '<p>Nenhum serviço disponível no momento.</p>';
+                    state.serviceId = null;
+                    if (previouslySelectedServiceId && document.querySelector('#step-4.active')) {
+                        window.goToStep(1);
+                        notify('O serviço selecionado não está mais disponível. Escolha um serviço atualizado.');
+                    }
+                    return;
+                }
+
+                list.innerHTML = availableServices.map(item => {
+                    const name = item.nome || item.servico || 'Serviço';
+                    const price = Number(item.valor ?? item.preco ?? 0);
+                    const duration = `${item.duracao || item.duracao_minutos || 30} min`;
+                    return `<div class="service-card" role="button" tabindex="0" onclick="selectService('${escapeHtml(name)}', ${price}, '${escapeHtml(duration)}', ${Number(item.id)})"><div class="service-icon">✂️</div><div class="service-info"><h4>${escapeHtml(name)}</h4><p>${money(price)} • ${escapeHtml(duration)}</p></div><span class="arrow">›</span></div>`;
+                }).join('');
+
+                const selected = availableServices.find(item => Number(item.id) === state.serviceId)
+                    || availableServices.find(item => (item.nome || item.servico) === state.service);
+                state.serviceId = selected ? Number(selected.id) : null;
+                if (selected) {
+                    state.service = selected.nome || selected.servico || 'Serviço';
+                    state.price = Number(selected.valor ?? selected.preco ?? 0);
+                    state.duration = `${selected.duracao || selected.duracao_minutos || 30} min`;
+                    updateSummary();
+                } else if (previouslySelectedServiceId && document.querySelector('#step-4.active')) {
+                    window.goToStep(1);
+                    notify('O serviço selecionado não está mais disponível. Escolha um serviço atualizado.');
+                }
+            }
 
             window.selectService = (name, price, duration, id) => {
                 state.service = name; state.price = Number(price) || 0; state.duration = duration || '';
@@ -1705,16 +1741,7 @@
             async function loadClientOptions() {
                 try {
                     serviceOptions = payloadArray(await apiRequest('/api/servicos'));
-                    if (serviceOptions.length) {
-                        const list = document.querySelector('.service-list');
-                        list.innerHTML = serviceOptions.map(item => {
-                            const name = item.nome || item.servico || 'Serviço';
-                            const price = Number(item.valor ?? item.preco ?? 0), duration = `${item.duracao || item.duracao_minutos || 30} min`;
-                            return `<div class="service-card" role="button" tabindex="0" onclick="selectService('${escapeHtml(name)}', ${price}, '${escapeHtml(duration)}', ${Number(item.id)})"><div class="service-icon">✂️</div><div class="service-info"><h4>${escapeHtml(name)}</h4><p>${money(price)} • ${escapeHtml(duration)}</p></div><span class="arrow">›</span></div>`;
-                        }).join('');
-                        const selected = serviceOptions.find(item => item.nome === state.service);
-                        if (selected) state.serviceId = Number(selected.id);
-                    }
+                    renderClientServices();
                 } catch (_) { /* os serviços locais continuam disponíveis sem API */ }
                 try {
                     professionalOptions = payloadArray(await apiRequest('/api/profissionais'));
@@ -1739,6 +1766,16 @@
                 try {
                     if (!Number.isInteger(state.serviceId) || !Number.isInteger(state.professionalId)) {
                         throw new Error('Não foi possível identificar o serviço ou profissional selecionado. Atualize a página e tente novamente.');
+                    }
+                    const latestServices = payloadArray(await apiRequest('/api/servicos'));
+                    const selectedService = latestServices.find(item => Number(item.id) === state.serviceId && item.ativo !== false);
+                    if (!selectedService) {
+                        serviceOptions = latestServices;
+                        state.serviceId = null;
+                        renderClientServices();
+                        window.goToStep(1);
+                        notify('O serviço selecionado não está mais disponível. Escolha um serviço atualizado.');
+                        return;
                     }
                     const data = {
                         profissionalId: state.professionalId,
@@ -1944,7 +1981,7 @@
                     document.querySelectorAll('.switch-btn').forEach(el => el.classList.toggle('active', el.id === `btn-${view}-view`));
                 }
                 if (view === 'dashboard') loadAgenda();
-                if (view === 'client') loadClientDayBlocks();
+                if (view === 'client') loadClientOptions();
             };
             state.month = new Date(state.date.getFullYear(), state.date.getMonth(), 1);
             updateSummary(); renderCalendar(); loadClientOptions(); loadAgenda();
