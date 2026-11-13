@@ -75,7 +75,7 @@
                         
                         <h3 class="section-title">Escolha um serviço</h3>
                         
-                        <div class="service-list">
+                        <div class="service-list client-service-list" role="region" aria-label="Serviços disponíveis" tabindex="0">
                             <div class="service-card" onclick="selectService('Corte Masculino', 40, '30 min')">
                                 <div class="service-icon">✂️</div>
                                 <div class="service-info">
@@ -2013,14 +2013,40 @@
                 if (typeof window.showNotification === 'function') window.showNotification(message);
                 else alert(message);
             };
+            function fitClientServiceList() {
+                const list = document.querySelector('#step-1 .client-service-list');
+                if (!list) return;
+
+                const cards = Array.from(list.children).filter(item => item.classList.contains('service-card'));
+                if (cards.length <= 3) {
+                    list.style.maxHeight = '';
+                    list.style.overflowY = '';
+                    return;
+                }
+                if (!list.getClientRects().length) return;
+
+                const previousScrollTop = list.scrollTop;
+                list.style.maxHeight = 'none';
+                list.style.overflowY = 'scroll';
+                list.scrollTop = 0;
+                const listTop = list.getBoundingClientRect().top;
+                const thirdCardBottom = cards[2].getBoundingClientRect().bottom;
+                list.style.maxHeight = `${Math.ceil(thirdCardBottom - listTop)}px`;
+                list.style.overflowY = 'auto';
+                list.scrollTop = previousScrollTop;
+            }
+            window.addEventListener('resize', fitClientServiceList);
+            document.getElementById('btn-client-view')?.addEventListener('click', () => requestAnimationFrame(fitClientServiceList));
+            document.querySelector('.toggle-mockup-btn')?.addEventListener('click', () => requestAnimationFrame(fitClientServiceList));
             function renderClientServices() {
-                const list = document.querySelector('.service-list');
+                const list = document.querySelector('#step-1 .client-service-list');
                 if (!list) return;
 
                 const previouslySelectedServiceId = state.serviceId;
                 const availableServices = serviceOptions.filter(item => item.ativo !== false);
                 if (!availableServices.length) {
                     list.innerHTML = '<p>Nenhum serviço disponível no momento.</p>';
+                    fitClientServiceList();
                     state.serviceId = null;
                     if (previouslySelectedServiceId && document.querySelector('#step-4.active')) {
                         window.goToStep(1);
@@ -2035,6 +2061,7 @@
                     const duration = `${item.duracao || item.duracao_minutos || 30} min`;
                     return `<div class="service-card" role="button" tabindex="0" onclick="selectService('${escapeHtml(name)}', ${price}, '${escapeHtml(duration)}', ${Number(item.id)})"><div class="service-icon">✂️</div><div class="service-info"><h4>${escapeHtml(name)}</h4><p>${money(price)} • ${escapeHtml(duration)}</p></div><span class="arrow">›</span></div>`;
                 }).join('');
+                fitClientServiceList();
 
                 const selected = availableServices.find(item => Number(item.id) === state.serviceId)
                     || availableServices.find(item => (item.nome || item.servico) === state.service);
@@ -2086,6 +2113,7 @@
                 if (step === 4 && (!state.date || !state.time)) { notify('Selecione uma data e um horário.'); return; }
                 if (original.goToStep) original.goToStep(step);
                 else document.querySelectorAll('.step-content').forEach(el => el.classList.toggle('active', el.id === `step-${step}`));
+                if (step === 1) requestAnimationFrame(fitClientServiceList);
                 if (step === 3) { renderCalendar(); loadAvailableSlots(); }
                 if (step === 4) updateSummary();
             };

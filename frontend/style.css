@@ -217,6 +217,12 @@ body {
     gap: 10px;
 }
 
+.client-service-list {
+    overflow-x: hidden;
+    overscroll-behavior-y: contain;
+    scrollbar-gutter: stable;
+}
+
 .service-card {
     background: #FFFFFF;
     border: 1px solid var(--border-color);
