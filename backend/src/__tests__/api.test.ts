@@ -172,6 +172,48 @@ describe('HoraCerta Backend - Testes Automatizados (RF01 a RF05)', () => {
     assert.equal(resDisp.body.horariosDisponiveis.includes('10:30'), true);
   });
 
+  test('RF03 - Deve editar data e horário sem permitir conflitos', async () => {
+    const resOutroAgendamento = await callController(AgendamentoController.realizarAgendamento, {
+      body: {
+        profissionalId: profId,
+        servicoId: servicoCorteId,
+        data: '2025-11-12',
+        horario: '14:00',
+        cliente: {
+          nome: 'Outro Cliente',
+          telefone: '(11) 97777-0001',
+        },
+      },
+    });
+    assert.equal(resOutroAgendamento.status, 201);
+    const outroAgendamentoId = resOutroAgendamento.body.agendamento.id;
+
+    try {
+      const resMesmoHorario = await callController(AgendamentoController.editar, {
+        params: { id: String(agendamentoCriadoId) },
+        body: { data: '2025-11-12', horario: '11:00' },
+      });
+      assert.equal(resMesmoHorario.status, 200);
+      assert.equal(resMesmoHorario.body.agendamento.horarioFim, '11:30');
+
+      const resConflito = await callController(AgendamentoController.editar, {
+        params: { id: String(agendamentoCriadoId) },
+        body: { data: '2025-11-12', horario: '14:00' },
+      });
+      assert.equal(resConflito.status, 409);
+
+      const resEditado = await callController(AgendamentoController.editar, {
+        params: { id: String(agendamentoCriadoId) },
+        body: { data: '2025-11-12', horario: '11:30' },
+      });
+      assert.equal(resEditado.status, 200);
+      assert.equal(resEditado.body.agendamento.horario, '11:30');
+      assert.equal(resEditado.body.agendamento.horarioFim, '12:00');
+    } finally {
+      await prisma.agendamento.delete({ where: { id: outroAgendamentoId } });
+    }
+  });
+
   test('RF03 - Deve disponibilizar painel gerencial da agenda com status e permitir confirmação', async () => {
     const resConfirm = await callController(AgendamentoController.confirmar, {
       params: { id: String(agendamentoCriadoId) },
@@ -200,12 +242,18 @@ describe('HoraCerta Backend - Testes Automatizados (RF01 a RF05)', () => {
     assert.equal(resCancel.body.agendamento.status, 'CANCELADO');
     assert.equal(resCancel.body.agendamento.canceladoPor, 'CLIENTE');
 
-    // Horário das 11:00 deve voltar a ficar disponível após o cancelamento
+    const resEditCancelado = await callController(AgendamentoController.editar, {
+      params: { id: String(agendamentoCriadoId) },
+      body: { data: '2025-11-12', horario: '11:00' },
+    });
+    assert.equal(resEditCancelado.status, 400);
+
+    // Horário das 11:30 deve voltar a ficar disponível após o cancelamento
     const resDisp = await callController(ProfissionalController.consultarDisponibilidade, {
       params: { id: String(profId) },
       query: { data: '2025-11-12', servicoId: String(servicoCorteId) },
     });
-    assert.equal(resDisp.body.horariosDisponiveis.includes('11:00'), true);
+    assert.equal(resDisp.body.horariosDisponiveis.includes('11:30'), true);
   });
 
   test('Caso de Uso - Deve permitir ao profissional bloquear horários manualmente', async () => {
@@ -316,5 +364,18 @@ describe('HoraCerta Backend - Testes Automatizados (RF01 a RF05)', () => {
     assert.equal(resConfiguracao.body.nome, 'Barbearia HoraCerta');
     assert.equal(resConfiguracao.body.telefone, '(11) 99999-0000');
     assert.equal(resConfiguracao.body.horario, '09:00-18:00');
+  });
+
+  test('Deve apagar permanentemente um agendamento e impedir nova consulta', async () => {
+    const resApagado = await callController(AgendamentoController.remover, {
+      params: { id: String(agendamentoCriadoId) },
+    });
+    assert.equal(resApagado.status, 200);
+    assert.equal(resApagado.body.id, agendamentoCriadoId);
+
+    const resConsulta = await callController(AgendamentoController.consultarStatus, {
+      params: { id: String(agendamentoCriadoId) },
+    });
+    assert.equal(resConsulta.status, 404);
   });
 });

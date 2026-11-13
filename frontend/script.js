@@ -39,6 +39,8 @@ function toggleMockup() {
 
 // Navigation between Steps
 function goToStep(stepNumber) {
+    if (window.receiptAwaitingUser && stepNumber !== 5) return;
+
     document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
     document.getElementById(`step-${stepNumber}`).classList.add('active');
 

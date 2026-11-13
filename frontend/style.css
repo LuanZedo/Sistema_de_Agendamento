@@ -198,24 +198,6 @@ body {
     display: block;
 }
 
-.hero-banner {
-    background: linear-gradient(135deg, #1E293B, #0F172A);
-    color: white;
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 16px;
-}
-
-.hero-banner h2 {
-    font-size: 18px;
-    margin-bottom: 4px;
-}
-
-.hero-banner p {
-    font-size: 12px;
-    opacity: 0.8;
-}
-
 .section-title {
     font-size: 16px;
     font-weight: 600;
@@ -418,8 +400,35 @@ body {
 .time-slots {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: 34px;
     gap: 8px;
+    max-height: calc(3 * 34px + 2 * 8px);
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-color: #94A3B8 #E2E8F0;
+    scrollbar-width: thin;
     margin-bottom: 20px;
+}
+
+.time-slots::-webkit-scrollbar {
+    width: 8px;
+}
+
+.time-slots::-webkit-scrollbar-track {
+    background: #E2E8F0;
+    border-radius: 4px;
+}
+
+.time-slots::-webkit-scrollbar-thumb {
+    background: #94A3B8;
+    border-radius: 4px;
+}
+
+.availability-message {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 13px;
 }
 
 .slot {
@@ -429,6 +438,12 @@ body {
     border-radius: 8px;
     font-size: 13px;
     cursor: pointer;
+}
+
+.slot:disabled {
+    background: #F1F5F9;
+    color: #94A3B8;
+    cursor: not-allowed;
 }
 
 .slot.active {
@@ -571,6 +586,10 @@ body {
 
 .success-screen h3 {
     font-size: 18px;
+}
+
+.receipt-home-btn {
+    margin-top: 8px;
 }
 
 .success-msg {
@@ -821,6 +840,12 @@ body {
     margin-bottom: 24px;
 }
 
+.dashboard-workspace .dashboard-scroll-list {
+    overflow-x: hidden;
+    overscroll-behavior-y: contain;
+    scrollbar-gutter: stable;
+}
+
 .dashboard-workspace .service-card {
     cursor: default;
 }
@@ -850,6 +875,26 @@ body {
 .edit-service-btn:hover {
     border-color: var(--primary-color);
     background: #F5F3FF;
+}
+
+.cancel-appointment-btn {
+    padding: 7px 12px;
+    border: 1px solid #FECACA;
+    border-radius: 8px;
+    background: #FEF2F2;
+    color: #B91C1C;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.cancel-appointment-btn:hover {
+    background: #FEE2E2;
+}
+
+.cancel-appointment-btn:disabled {
+    cursor: wait;
+    opacity: 0.6;
 }
 
 .remove-service-btn {
@@ -936,6 +981,48 @@ body {
     border-radius: 12px;
     background: white;
     box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25);
+}
+
+.appointment-confirm-modal {
+    width: min(100%, 460px);
+}
+
+.appointment-edit-form h3 {
+    margin: 0 32px 18px 0;
+    color: var(--text-dark);
+    font-size: 18px;
+}
+
+.appointment-edit-fields {
+    display: grid;
+    gap: 12px;
+}
+
+.appointment-edit-form .form-group {
+    margin-bottom: 0;
+}
+
+.appointment-edit-form input {
+    width: 100%;
+}
+
+.appointment-edit-feedback {
+    margin: 12px 0 0;
+    color: #B91C1C;
+    line-height: 1.4;
+}
+
+.appointment-edit-feedback:empty {
+    display: none;
+}
+
+.appointment-edit-form .delete-confirm-actions {
+    margin-top: 18px;
+}
+
+.appointment-edit-form .edit-service-btn:disabled {
+    cursor: wait;
+    opacity: 0.6;
 }
 
 .dashboard-workspace .service-modal-form {
@@ -1485,6 +1572,11 @@ body {
     overflow-x: auto;
 }
 
+.report-history-wrap {
+    overscroll-behavior-y: contain;
+    scrollbar-gutter: stable;
+}
+
 .report-table {
     width: 100%;
     border-collapse: collapse;
@@ -1589,6 +1681,15 @@ body {
     background: #F59E0B;
 }
 
+.report-status.cancelado {
+    background: #FEE2E2;
+    color: #991B1B;
+}
+
+.report-status.cancelado .dot {
+    background: #EF4444;
+}
+
 .report-value {
     text-align: right;
     font-weight: 800;
@@ -1688,6 +1789,12 @@ body {
     margin-top: 6px;
     color: #64748B;
     font-size: 0.9rem;
+}
+
+.config-load-error {
+    margin-top: 8px;
+    color: #B91C1C;
+    font-size: 0.85rem;
 }
 
 .config-unsaved {
@@ -2171,6 +2278,20 @@ body {
     padding: 18px 16px 16px;
     margin-top: 18px;
     color: #FFFFFF;
+}
+
+.client-business-card {
+    margin-bottom: 16px;
+}
+
+.client-business-card .config-preview-list span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.client-business-card .client-config-feedback {
+    margin: 8px 0 0;
+    color: #B91C1C;
 }
 
 .config-preview-header {

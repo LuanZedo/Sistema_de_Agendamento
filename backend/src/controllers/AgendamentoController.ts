@@ -2,13 +2,14 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../config/prisma';
 import { DisponibilidadeService, IntervaloOcupado } from '../services/DisponibilidadeService';
+import { horarioFuncionamentoNaData, obterConfiguracao } from '../services/ConfiguracaoService';
 
 const criarAgendamentoSchema = z.object({
   profissionalId: z.number().int().positive('Selecione um profissional válido.'),
   servicoId: z.number().int().positive('Selecione um serviço válido.'),
   data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'A data deve estar no formato YYYY-MM-DD.'),
   horario: z.string().regex(/^\d{2}:\d{2}$/, 'O horário deve estar no formato HH:mm.'),
-  status: z.enum(['PENDENTE', 'CONFIRMADO']).optional().default('CONFIRMADO'),
+  status: z.enum(['PENDENTE', 'CONFIRMADO']).optional(),
   observacoes: z.string().optional(),
   // Permite informar clienteId existente OU os dados do formulário público (Tela 2: Nome completo + WhatsApp)
   clienteId: z.number().int().positive().optional(),
@@ -27,6 +28,11 @@ const criarAgendamentoSchema = z.object({
 const cancelarAgendamentoSchema = z.object({
   canceladoPor: z.enum(['CLIENTE', 'PROFISSIONAL']).optional().default('CLIENTE'),
   motivoCancelamento: z.string().optional(),
+});
+
+const editarAgendamentoSchema = z.object({
+  data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'A data deve estar no formato YYYY-MM-DD.'),
+  horario: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/, 'O horário deve estar no formato HH:mm.'),
 });
 
 /**
@@ -115,6 +121,8 @@ export class AgendamentoController {
         return;
       }
 
+      const configuracao = await obterConfiguracao();
+      const expedienteDia = horarioFuncionamentoNaData(configuracao, dados.data);
       const resultado = await prisma.$transaction(async (tx) => {
         // 1. Verifica profissional e serviço
         const [profissional, servico] = await Promise.all([
@@ -133,17 +141,40 @@ export class AgendamentoController {
         // 2. Calcula horário de término com base na duração do serviço
         const horarioFim = DisponibilidadeService.calcularHorarioFim(dados.horario, servico.duracao);
 
-        // 3. Verifica se está dentro do expediente do profissional
+        // 3. Verifica se está dentro do expediente configurado para o estabelecimento
         const inicioMin = DisponibilidadeService.paraMinutos(dados.horario);
         const fimMin = DisponibilidadeService.paraMinutos(horarioFim);
-        const expInicioMin = DisponibilidadeService.paraMinutos(profissional.horarioInicioExpediente);
-        const expFimMin = DisponibilidadeService.paraMinutos(profissional.horarioFimExpediente);
+        if (!expedienteDia.open) {
+          throw { statusCode: 400, mensagem: 'O estabelecimento não atende nesta data.' };
+        }
+        const expInicioMin = DisponibilidadeService.paraMinutos(expedienteDia.start);
+        const expFimMin = DisponibilidadeService.paraMinutos(expedienteDia.end);
 
         if (inicioMin < expInicioMin || fimMin > expFimMin) {
           throw {
             statusCode: 400,
-            mensagem: `Horário fora do expediente do profissional (${profissional.horarioInicioExpediente} às ${profissional.horarioFimExpediente}).`,
+            mensagem: `Horário fora do expediente do estabelecimento (${expedienteDia.start} às ${expedienteDia.end}).`,
           };
+        }
+        if ((inicioMin - expInicioMin) % configuracao.intervaloMinutos !== 0) {
+          throw {
+            statusCode: 400,
+            mensagem: `Escolha um horário alinhado ao intervalo de ${configuracao.intervaloMinutos} minutos.`,
+          };
+        }
+        const inicioIntervalo = DisponibilidadeService.paraMinutos(expedienteDia.lunchStart);
+        const fimIntervalo = DisponibilidadeService.paraMinutos(expedienteDia.lunchEnd);
+        if (fimIntervalo > inicioIntervalo && inicioMin < fimIntervalo && fimMin > inicioIntervalo) {
+          throw { statusCode: 400, mensagem: 'O horário escolhido coincide com o intervalo do estabelecimento.' };
+        }
+        if (configuracao.antecedenciaMinutos > 0) {
+          const horarioAgendado = new Date(`${dados.data}T${dados.horario}:00`).getTime();
+          if (horarioAgendado < Date.now() + configuracao.antecedenciaMinutos * 60_000) {
+            throw {
+              statusCode: 400,
+              mensagem: `O agendamento deve ser feito com pelo menos ${configuracao.antecedenciaMinutos} minutos de antecedência.`,
+            };
+          }
         }
 
         // 4. RF04: Verifica choque de horário com agendamentos ativos e bloqueios manuais
@@ -226,7 +257,7 @@ export class AgendamentoController {
             data: dados.data,
             horario: dados.horario,
             horarioFim,
-            status: dados.status,
+            status: dados.status ?? (configuracao.confirmacaoAutomatica ? 'CONFIRMADO' : 'PENDENTE'),
             observacoes: dados.observacoes,
             clienteId: clienteIdFinal!,
             profissionalId: dados.profissionalId,
@@ -297,6 +328,138 @@ export class AgendamentoController {
   }
 
   /**
+   * PATCH /agendamentos/:id
+   * Atualiza data e horário, validando expediente, bloqueios e conflitos.
+   */
+  static async editar(req: Request, res: Response): Promise<void> {
+    try {
+      const id = Number(req.params.id);
+      if (!Number.isInteger(id) || id <= 0) {
+        res.status(400).json({ erro: 'ID de agendamento inválido.' });
+        return;
+      }
+
+      const dados = editarAgendamentoSchema.parse(req.body);
+      const configuracao = await obterConfiguracao();
+      const expedienteDia = horarioFuncionamentoNaData(configuracao, dados.data);
+      const atualizado = await prisma.$transaction(async (tx) => {
+        const agendamento = await tx.agendamento.findUnique({
+          where: { id },
+          include: { servico: true },
+        });
+
+        if (!agendamento) {
+          throw { statusCode: 404, mensagem: 'Agendamento não encontrado.' };
+        }
+        if (agendamento.status === 'CANCELADO') {
+          throw { statusCode: 400, mensagem: 'Não é possível editar um agendamento cancelado.' };
+        }
+
+        const inicioMin = DisponibilidadeService.paraMinutos(dados.horario);
+        const fimMin = inicioMin + agendamento.servico.duracao;
+        if (fimMin >= 24 * 60) {
+          throw { statusCode: 400, mensagem: 'O atendimento não pode ultrapassar o fim do dia.' };
+        }
+        const horarioFim = DisponibilidadeService.paraHorarioString(fimMin);
+        if (!expedienteDia.open) {
+          throw { statusCode: 400, mensagem: 'O estabelecimento não atende nesta data.' };
+        }
+        const expedienteInicio = DisponibilidadeService.paraMinutos(expedienteDia.start);
+        const expedienteFim = DisponibilidadeService.paraMinutos(expedienteDia.end);
+
+        if (inicioMin < expedienteInicio || fimMin > expedienteFim) {
+          throw {
+            statusCode: 400,
+            mensagem: `Horário fora do expediente do estabelecimento (${expedienteDia.start} às ${expedienteDia.end}).`,
+          };
+        }
+        if ((inicioMin - expedienteInicio) % configuracao.intervaloMinutos !== 0) {
+          throw {
+            statusCode: 400,
+            mensagem: `Escolha um horário alinhado ao intervalo de ${configuracao.intervaloMinutos} minutos.`,
+          };
+        }
+        const inicioIntervalo = DisponibilidadeService.paraMinutos(expedienteDia.lunchStart);
+        const fimIntervalo = DisponibilidadeService.paraMinutos(expedienteDia.lunchEnd);
+        if (fimIntervalo > inicioIntervalo && inicioMin < fimIntervalo && fimMin > inicioIntervalo) {
+          throw { statusCode: 400, mensagem: 'O horário escolhido coincide com o intervalo do estabelecimento.' };
+        }
+
+        const [agendamentosDoDia, bloqueiosDoDia] = await Promise.all([
+          tx.agendamento.findMany({
+            where: {
+              id: { not: id },
+              profissionalId: agendamento.profissionalId,
+              data: dados.data,
+              status: { in: ['PENDENTE', 'CONFIRMADO'] },
+            },
+            select: { id: true, horario: true, horarioFim: true },
+          }),
+          tx.bloqueioAgenda.findMany({
+            where: {
+              profissionalId: agendamento.profissionalId,
+              data: dados.data,
+            },
+            select: { id: true, horarioInicio: true, horarioFim: true },
+          }),
+        ]);
+
+        const intervalosOcupados: IntervaloOcupado[] = [
+          ...agendamentosDoDia.map((item) => ({
+            horarioInicio: item.horario,
+            horarioFim: item.horarioFim,
+            origem: 'AGENDAMENTO' as const,
+            referenciaId: item.id,
+          })),
+          ...bloqueiosDoDia.map((item) => ({
+            horarioInicio: item.horarioInicio,
+            horarioFim: item.horarioFim,
+            origem: 'BLOQUEIO' as const,
+            referenciaId: item.id,
+          })),
+        ];
+        const conflito = DisponibilidadeService.verificarChoqueNaAgenda(
+          dados.horario,
+          horarioFim,
+          intervalosOcupados
+        );
+
+        if (conflito) {
+          throw {
+            statusCode: 409,
+            mensagem: `RF04 - Choque de horário detectado! O intervalo ${dados.horario} - ${horarioFim} conflita com um horário já ocupado (${conflito.horarioInicio} - ${conflito.horarioFim}).`,
+            conflito,
+          };
+        }
+
+        return tx.agendamento.update({
+          where: { id },
+          data: { data: dados.data, horario: dados.horario, horarioFim },
+          include: { cliente: true, profissional: true, servico: true },
+        });
+      });
+
+      res.json({
+        mensagem: 'Agendamento atualizado com sucesso.',
+        agendamento: atualizado,
+      });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ erro: 'Dados inválidos para edição.', campos: error.errors });
+        return;
+      }
+      if (error && typeof error.statusCode === 'number') {
+        res.status(error.statusCode).json({
+          erro: error.mensagem,
+          ...(error.conflito ? { conflito: error.conflito } : {}),
+        });
+        return;
+      }
+      res.status(500).json({ erro: 'Erro interno ao editar agendamento.', detalhes: String(error) });
+    }
+  }
+
+  /**
    * PATCH /agendamentos/:id/cancelar
    * RF05: O sistema deve permitir o cancelamento do agendamento tanto pelo cliente quanto pelo profissional.
    */
@@ -314,6 +477,18 @@ export class AgendamentoController {
       if (agendamento.status === 'CANCELADO') {
         res.status(400).json({ erro: 'Este agendamento já se encontra cancelado.' });
         return;
+      }
+
+      if (dados.canceladoPor === 'CLIENTE') {
+        const configuracao = await obterConfiguracao();
+        const horarioAgendado = new Date(`${agendamento.data}T${agendamento.horario}:00`).getTime();
+        const limiteCancelamento = configuracao.politicaCancelamentoHoras * 60 * 60_000;
+        if (horarioAgendado > Date.now() && horarioAgendado - Date.now() < limiteCancelamento) {
+          res.status(400).json({
+            erro: `O cancelamento deve ser feito com pelo menos ${configuracao.politicaCancelamentoHoras} hora(s) de antecedência.`,
+          });
+          return;
+        }
       }
 
       const cancelado = await prisma.agendamento.update({
@@ -337,6 +512,31 @@ export class AgendamentoController {
         return;
       }
       res.status(500).json({ erro: 'Erro ao cancelar agendamento.', detalhes: String(error) });
+    }
+  }
+
+  /**
+   * DELETE /agendamentos/:id
+   * Remove permanentemente um agendamento do histórico.
+   */
+  static async remover(req: Request, res: Response): Promise<void> {
+    try {
+      const id = Number(req.params.id);
+      if (!Number.isInteger(id) || id <= 0) {
+        res.status(400).json({ erro: 'ID de agendamento inválido.' });
+        return;
+      }
+
+      const agendamento = await prisma.agendamento.findUnique({ where: { id } });
+      if (!agendamento) {
+        res.status(404).json({ erro: 'Agendamento não encontrado.' });
+        return;
+      }
+
+      await prisma.agendamento.delete({ where: { id } });
+      res.json({ mensagem: 'Agendamento apagado permanentemente.', id });
+    } catch (error) {
+      res.status(500).json({ erro: 'Erro ao apagar agendamento.', detalhes: String(error) });
     }
   }
 }

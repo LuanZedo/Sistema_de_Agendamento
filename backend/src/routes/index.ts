@@ -32,6 +32,8 @@ routes.get('/profissionais/:id/agenda', ProfissionalController.visualizarAgenda)
 routes.get('/agendamentos', AgendamentoController.listar);
 routes.get('/agendamentos/:id', AgendamentoController.consultarStatus);
 routes.post('/agendamentos', AgendamentoController.realizarAgendamento);
+routes.patch('/agendamentos/:id', AgendamentoController.editar);
+routes.delete('/agendamentos/:id', AgendamentoController.remover);
 routes.patch('/agendamentos/:id/confirmar', AgendamentoController.confirmar);
 routes.patch('/agendamentos/:id/cancelar', AgendamentoController.cancelar);
 

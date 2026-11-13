@@ -5,7 +5,7 @@
 export interface IntervaloOcupado {
   horarioInicio: string; // "HH:mm"
   horarioFim: string;    // "HH:mm"
-  origem?: 'AGENDAMENTO' | 'BLOQUEIO';
+  origem?: 'AGENDAMENTO' | 'BLOQUEIO' | 'INTERVALO';
   referenciaId?: number;
 }
 
@@ -122,8 +122,10 @@ export class DisponibilidadeService {
         ...(conflito
           ? {
               motivoIndisponibilidade:
-                conflito.origem === 'BLOQUEIO'
-                  ? 'Horário bloqueado pelo profissional'
+              conflito.origem === 'BLOQUEIO'
+                ? 'Horário bloqueado pelo profissional'
+                : conflito.origem === 'INTERVALO'
+                  ? 'Intervalo de funcionamento'
                   : `Conflito com atendimento das ${conflito.horarioInicio} às ${conflito.horarioFim}`,
             }
           : {}),

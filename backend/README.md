@@ -244,7 +244,27 @@ Permite que o cliente (ou o profissional no painel) cancele o agendamento. Assim
   });
   ```
 
-#### C. Cadastrar e Editar Serviços no Menu "Serviços" (**RF01**)
+#### C. Editar data e horário de um Agendamento
+* **Rota:** `PATCH http://localhost:3333/api/agendamentos/:id`
+* O corpo deve conter `data` (`YYYY-MM-DD`) e `horario` (`HH:mm`). O backend recalcula o horário final e recusa conflito com outro agendamento ou bloqueio (`409 Conflict`), bem como horários fora do expediente.
+  ```javascript
+  await fetch(`http://localhost:3333/api/agendamentos/${agendamentoId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data: '2025-11-13', horario: '15:00' })
+  });
+  ```
+
+#### D. Apagar permanentemente um Agendamento
+* **Rota:** `DELETE http://localhost:3333/api/agendamentos/:id`
+* A exclusão é permanente. Para manter o histórico e apenas retirar o horário do calendário, use a rota de cancelamento.
+  ```javascript
+  await fetch(`http://localhost:3333/api/agendamentos/${agendamentoId}`, {
+    method: 'DELETE'
+  });
+  ```
+
+#### E. Cadastrar e Editar Serviços no Menu "Serviços" (**RF01**)
 * **Cadastrar (`POST http://localhost:3333/api/servicos`):**
   ```javascript
   await fetch('http://localhost:3333/api/servicos', {

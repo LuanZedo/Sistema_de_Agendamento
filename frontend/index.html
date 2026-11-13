@@ -48,15 +48,29 @@
                     </div>
 
                     <div class="screen-header">
-                        <span class="app-name">HoraCerta</span>
+                        <span id="client-header-name" class="app-name">HoraCerta</span>
                         <button class="menu-icon">☰</button>
                     </div>
 
                     <!-- STEP 1: Serviços -->
                     <div id="step-1" class="step-content active">
-                        <div class="hero-banner">
-                            <h2>Barbearia HoraCerta</h2>
-                            <p>Agende seu horário de forma rápida e prática, 24 horas por dia.</p>
+                        <div class="config-preview-box client-business-card">
+                            <div class="config-preview-header">
+                                <div id="client-business-avatar" class="config-preview-avatar">HO</div>
+                                <div class="config-preview-meta">
+                                    <h4 id="client-business-name">HoraCerta</h4>
+                                    <p id="client-business-instagram">@horacerta.barbearia</p>
+                                </div>
+                            </div>
+                            <div class="config-preview-card">
+                                <p id="client-business-message">Cortes modernos, alinhamento de fios, barba na navalha e selagem capilar com hora marcada.</p>
+                                <ul class="config-preview-list">
+                                    <li>🕒 Hoje: <strong id="client-business-hours">08:00 - 18:00</strong></li>
+                                    <li>📞 <span id="client-business-phone">Telefone não informado</span></li>
+                                    <li>📍 <span id="client-business-address">Endereço não informado</span></li>
+                                </ul>
+                                <p id="client-config-feedback" class="client-config-feedback" role="alert" hidden></p>
+                            </div>
                         </div>
                         
                         <h3 class="section-title">Escolha um serviço</h3>
@@ -154,15 +168,7 @@
 
                         <h4 class="sub-title">Horários disponíveis</h4>
                         <div class="time-slots">
-                            <button class="slot" onclick="selectTime('09:00', this)">09:00</button>
-                            <button class="slot" onclick="selectTime('09:30', this)">09:30</button>
-                            <button class="slot" onclick="selectTime('10:00', this)">10:00</button>
-                            <button class="slot" onclick="selectTime('10:30', this)">10:30</button>
-                            <button class="slot active" onclick="selectTime('11:00', this)">11:00</button>
-                            <button class="slot" onclick="selectTime('14:00', this)">14:00</button>
-                            <button class="slot" onclick="selectTime('14:30', this)">14:30</button>
-                            <button class="slot" onclick="selectTime('15:00', this)">15:00</button>
-                            <button class="slot" onclick="selectTime('15:30', this)">15:30</button>
+                            <p class="availability-message" role="status">Selecione uma data para consultar os horários.</p>
                         </div>
 
                         <button class="btn-primary" onclick="goToStep(4)">Continuar</button>
@@ -184,7 +190,7 @@
                             </ul>
                         </div>
 
-                        <form class="user-form" onsubmit="submitBooking(event)">
+                        <form class="user-form" onsubmit="window.submitBooking(event); return false;">
                             <h4 class="sub-title">Seus dados</h4>
                             <div class="form-group">
                                 <label for="user-name">Nome completo *</label>
@@ -213,6 +219,7 @@
                                     <li><span>📅</span> <span id="rec-date">12 de nov. de 2025</span></li>
                                     <li><span>⏰</span> <span id="rec-time">11:00</span></li>
                                     <li><span>🏷️</span> <span id="rec-price">R$ 40,00</span></li>
+                                    <li><span>⚠️</span> <span id="rec-cancellation-policy">Carregando política de cancelamento...</span></li>
                                 </ul>
                             </div>
 
@@ -222,7 +229,7 @@
                             <button class="btn-action btn-calendar" onclick="showNotification('Evento adicionado ao Google Calendar!')">
                                 📅 Adicionar ao calendário
                             </button>
-                            <button class="btn-text" onclick="goToStep(1)">Cancelar ou novo agendamento</button>
+                            <button type="button" class="btn-primary receipt-home-btn" onclick="returnToBookingHome()">Voltar para a página inicial</button>
                         </div>
                     </div>
 
@@ -416,6 +423,50 @@
         </section>
     </main>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <div class="service-modal-backdrop" id="cancel-appointment-modal" hidden>
+        <section class="service-modal delete-confirm-modal appointment-confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="cancel-appointment-title" aria-describedby="cancel-appointment-message">
+            <h3 id="cancel-appointment-title">Cancelar agendamento?</h3>
+            <p id="cancel-appointment-message">O agendamento será removido do calendário, mas continuará no histórico com o status CANCELADO.</p>
+            <div class="delete-confirm-actions">
+                <button class="delete-cancel-btn" type="button" data-appointment-cancel-dismiss>Voltar</button>
+                <button class="delete-confirm-btn" type="button" data-appointment-cancel-confirm>Cancelar agendamento</button>
+            </div>
+        </section>
+    </div>
+    <div class="service-modal-backdrop" id="edit-appointment-modal" hidden>
+        <section class="service-modal appointment-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="edit-appointment-title">
+            <button class="service-modal-close" type="button" aria-label="Fechar" data-appointment-editor-close>×</button>
+            <form class="appointment-edit-form" onsubmit="saveAppointmentEdit(event)">
+                <input id="appointment-edit-id" type="hidden">
+                <h3 id="edit-appointment-title">Editar agendamento</h3>
+                <div class="appointment-edit-fields">
+                    <div class="form-group">
+                        <label for="appointment-edit-date">Data</label>
+                        <input id="appointment-edit-date" type="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="appointment-edit-time">Horário</label>
+                        <input id="appointment-edit-time" type="time" required>
+                    </div>
+                </div>
+                <p id="appointment-edit-feedback" role="alert"></p>
+                <div class="delete-confirm-actions">
+                    <button class="delete-cancel-btn" type="button" data-appointment-edit-dismiss>Voltar</button>
+                    <button class="edit-service-btn" type="submit">Salvar alterações</button>
+                </div>
+            </form>
+        </section>
+    </div>
+    <div class="service-modal-backdrop" id="delete-appointment-modal" hidden>
+        <section class="service-modal delete-confirm-modal appointment-confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-appointment-title" aria-describedby="delete-appointment-message">
+            <h3 id="delete-appointment-title">Apagar agendamento?</h3>
+            <p id="delete-appointment-message">Esta ação apagará o registro permanentemente. Para apenas removê-lo do calendário, use Cancelar.</p>
+            <div class="delete-confirm-actions">
+                <button class="delete-cancel-btn" type="button" data-appointment-delete-dismiss>Voltar</button>
+                <button class="delete-confirm-btn" type="button" data-appointment-delete-confirm>Apagar definitivamente</button>
+            </div>
+        </section>
+    </div>
     <script src="script.js"></script>
     <script>
         // Override API_BASE_URL before this script when the API is hosted elsewhere.
@@ -439,6 +490,41 @@
 
         function payloadArray(result) {
             return Array.isArray(result) ? result : (result?.dados || result?.data || result?.items || result?.results || []);
+        }
+
+        function applyClientBusinessInfo(settings) {
+            const name = String(settings?.nome || 'HoraCerta');
+            const header = document.getElementById('client-header-name');
+            const title = document.getElementById('client-business-name');
+            const avatar = document.getElementById('client-business-avatar');
+            const instagram = document.getElementById('client-business-instagram');
+            const message = document.getElementById('client-business-message');
+            const hours = document.getElementById('client-business-hours');
+            const phone = document.getElementById('client-business-phone');
+            const address = document.getElementById('client-business-address');
+            const feedback = document.getElementById('client-config-feedback');
+            const nameParts = name.trim().split(/\s+/).filter(Boolean);
+            const initials = nameParts.length > 1
+                ? `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase()
+                : name.slice(0, 2).toUpperCase();
+            const instagramValue = String(settings?.instagram || '@horacerta').trim();
+            const todayIndex = (new Date().getDay() + 6) % 7;
+            const todayHours = Array.isArray(settings?.horariosSemana) ? settings.horariosSemana[todayIndex] : null;
+            const hoursValue = todayHours
+                ? (todayHours.open ? `${todayHours.start} - ${todayHours.end}` : 'Fechado hoje')
+                : String(settings?.horario || '08:00-18:00').replace('-', ' - ');
+            if (header) header.textContent = name;
+            if (title) title.textContent = name;
+            if (avatar) avatar.textContent = initials;
+            if (instagram) instagram.textContent = instagramValue.startsWith('@') ? instagramValue : `@${instagramValue}`;
+            if (message) message.textContent = String(settings?.mensagem || 'Agende seu horário de forma rápida e prática.');
+            if (hours) hours.textContent = hoursValue;
+            if (phone) phone.textContent = String(settings?.telefone || 'Telefone não informado');
+            if (address) address.textContent = String(settings?.endereco || 'Endereço não informado');
+            if (feedback) {
+                feedback.textContent = '';
+                feedback.hidden = true;
+            }
         }
 
         function isFullDayBlock(block) {
@@ -508,6 +594,56 @@
             loadDashboardSection(section);
         }
 
+        function fitDashboardList() {
+            const list = document.querySelector('#dashboard-workspace .dashboard-scroll-list');
+            if (!list) return;
+
+            const entries = Array.from(list.children).filter(item => item.classList.contains('dashboard-service-card'));
+            if (entries.length <= 10 || !list.getClientRects().length) {
+                list.style.maxHeight = '';
+                list.style.overflowY = '';
+                return;
+            }
+
+            const previousScrollTop = list.scrollTop;
+            list.style.maxHeight = 'none';
+            list.style.overflowY = 'scroll';
+            list.scrollTop = 0;
+            const listTop = list.getBoundingClientRect().top;
+            const tenthEntryBottom = entries[9].getBoundingClientRect().bottom;
+            list.style.maxHeight = `${Math.ceil(tenthEntryBottom - listTop)}px`;
+            list.style.overflowY = 'auto';
+            list.scrollTop = previousScrollTop;
+        }
+
+        function fitReportHistory() {
+            const wrapper = document.querySelector('.report-history-wrap');
+            const rows = Array.from(document.querySelectorAll('#report-tbody > tr'));
+            if (!wrapper) return;
+
+            if (rows.length <= 10 || !wrapper.getClientRects().length) {
+                wrapper.style.maxHeight = '';
+                wrapper.style.overflowY = '';
+                wrapper.scrollTop = 0;
+                return;
+            }
+
+            wrapper.style.maxHeight = 'none';
+            wrapper.style.overflowY = 'scroll';
+            wrapper.scrollTop = 0;
+            const wrapperTop = wrapper.getBoundingClientRect().top;
+            const tenthRowBottom = rows[9].getBoundingClientRect().bottom;
+            wrapper.style.maxHeight = `${Math.ceil(tenthRowBottom - wrapperTop)}px`;
+            wrapper.style.overflowY = 'auto';
+        }
+
+        function fitDashboardScrollAreas() {
+            fitDashboardList();
+            fitReportHistory();
+        }
+
+        window.addEventListener('resize', fitDashboardScrollAreas);
+
         document.querySelector('.dash-nav').addEventListener('click', event => {
             const item = event.target.closest('.nav-item[data-section]');
             if (!item) return;
@@ -538,15 +674,31 @@
             }
             const payload = Array.isArray(result) ? result : (result?.dados || result?.data || result?.items || result?.[section] || []);
             const records = Array.isArray(payload) ? payload : [];
-            const reportData = [
-                { id: 1, client: 'João Silva', initials: 'JS', service: 'Corte Masculino', professional: 'Lucas Almeida', rawDate: '2026-11-12', formattedDate: '12/11/2026', time: '11:00', status: 'CONFIRMADO', price: 40.00 },
-                { id: 2, client: 'Pedro Alves', initials: 'PA', service: 'Barba', professional: 'Lucas Almeida', rawDate: '2025-11-12', formattedDate: '12/11/2025', time: '10:00', status: 'PENDENTE', price: 30.00 },
-                { id: 3, client: 'João Silva', initials: 'JS', service: 'Corte Masculino', professional: 'Lucas Almeida', rawDate: '2025-11-12', formattedDate: '12/11/2025', time: '11:00', status: 'CONFIRMADO', price: 40.00 },
-                { id: 4, client: 'Marcos Lima', initials: 'ML', service: 'Corte Masculino', professional: 'Lucas Almeida', rawDate: '2025-11-11', formattedDate: '11/11/2025', time: '09:30', status: 'CONFIRMADO', price: 40.00 },
-                { id: 5, client: 'Carlos Rocha', initials: 'CR', service: 'Corte + Barba', professional: 'Lucas Almeida', rawDate: '2025-11-11', formattedDate: '11/11/2025', time: '14:00', status: 'CONFIRMADO', price: 65.00 }
-            ];
+            const reportRecords = section === 'relatorios' && Array.isArray(result?.agendamentos) ? result.agendamentos : [];
+            const reportData = reportRecords.map(record => {
+                const client = String(displayName(record.cliente) || 'Cliente');
+                const service = String(displayName(record.servico) || 'Serviço');
+                const professional = String(displayName(record.profissional) || 'Profissional');
+                const rawDate = String(record.data || '');
+                const dateParts = rawDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                const price = Number(record.valor ?? 0);
+                return {
+                    id: record.id,
+                    client,
+                    initials: client.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0].toUpperCase()).join('') || '?',
+                    service,
+                    professional,
+                    rawDate,
+                    formattedDate: dateParts ? `${dateParts[3]}/${dateParts[2]}/${dateParts[1]}` : rawDate,
+                    time: String(record.horario || ''),
+                    status: String(record.status || '').toUpperCase(),
+                    price: Number.isFinite(price) ? price : 0
+                };
+            });
+            const scrollableList = ['agendamentos', 'servicos', 'bloqueios'].includes(section);
+            const listName = section === 'bloqueios' ? 'horários bloqueados' : config.title.toLowerCase();
             const defaultRows = records.length
-                ? `<div class="service-list">${records.map(record => {
+                ? `<div class="service-list${scrollableList ? ' dashboard-scroll-list' : ''}"${scrollableList ? ` role="region" aria-label="Lista de ${escapeHtml(listName)}" tabindex="0"` : ''}>${records.map(record => {
                     const client = displayName(record.cliente);
                     const service = displayName(record.servico);
                     const title = section === 'agendamentos'
@@ -554,6 +706,7 @@
                         : section === 'bloqueios'
                         ? displayName(record.profissional) || 'Bloqueio'
                         : record.nome || service || record.titulo || client || 'Registro';
+                    const appointmentStatus = String(record.status || '').toUpperCase();
                     const description = section === 'agendamentos'
                         ? [record.data, record.horario, record.status].filter(Boolean).join(' • ')
                         : section === 'bloqueios'
@@ -567,20 +720,34 @@
                     const blockActions = section === 'bloqueios'
                         ? `<div class="service-actions"><button class="edit-service-btn" type="button" aria-label="Editar bloqueio de ${escapeHtml(title)}" title="Editar bloqueio" onclick="editBlock(${Number(record.id)})">Editar</button><button class="remove-service-btn" type="button" aria-label="Apagar bloqueio de ${escapeHtml(title)}" data-block-description="${escapeHtml(`${title} • ${description}`)}" title="Apagar bloqueio" onclick="deleteBlock(${Number(record.id)}, this.dataset.blockDescription)">×</button></div>`
                         : '';
-                    return `<article class="service-card${section === 'servicos' || section === 'bloqueios' ? ' dashboard-service-card' : ''}"><div class="service-info"><h4>${escapeHtml(title)}</h4><p>${escapeHtml(description)}</p></div>${serviceActions}${blockActions}</article>`;
+                    const appointmentActions = section === 'agendamentos'
+                        ? `<div class="service-actions">${appointmentStatus !== 'CANCELADO' ? `<button class="edit-service-btn" type="button" aria-label="Editar data e horário de ${escapeHtml(title)}" data-date="${escapeHtml(record.data || '')}" data-time="${escapeHtml(record.horario || '')}" onclick="openAppointmentEditor(${Number(record.id)}, this.dataset.date, this.dataset.time, this)">Editar</button><button class="cancel-appointment-btn" type="button" aria-label="Cancelar ${escapeHtml(title)}" onclick="cancelAppointment(${Number(record.id)}, this)">Cancelar</button>` : ''}<button class="remove-service-btn" type="button" aria-label="Apagar agendamento ${escapeHtml(title)}" title="Apagar agendamento permanentemente" onclick="deleteAppointment(${Number(record.id)}, this)">×</button></div>`
+                        : '';
+                    const dashboardCard = section === 'servicos' || section === 'bloqueios' || section === 'agendamentos';
+                    return `<article class="service-card${dashboardCard ? ' dashboard-service-card' : ''}"><div class="service-info"><h4>${escapeHtml(title)}</h4><p>${escapeHtml(description)}</p></div>${serviceActions}${blockActions}${appointmentActions}</article>`;
                 }).join('')}</div>`
                 : loadError || section === 'configuracoes' ? '' : '<p>Nenhum registro encontrado.</p>';
             const rows = section === 'relatorios'
                 ? (() => {
                     const formatCurrency = value => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
                     const reportState = { filter: 'ALL', search: '', period: 'all' };
+                    const reportPeriods = [...new Set(reportData.map(item => item.rawDate.slice(0, 7)).filter(period => /^\d{4}-\d{2}$/.test(period)))]
+                        .sort((a, b) => b.localeCompare(a))
+                        .map(period => {
+                            const [year, month] = period.split('-').map(Number);
+                            const label = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(new Date(year, month - 1, 1));
+                            return `<option value="${period}">${escapeHtml(label)}</option>`;
+                        }).join('');
 
                     function renderReportTable() {
                         const periodItems = reportData.filter(item => reportState.period === 'all' || item.rawDate.startsWith(reportState.period));
                         const totalCount = periodItems.length;
                         const confirmedCount = periodItems.filter(item => item.status === 'CONFIRMADO').length;
                         const pendingCount = periodItems.filter(item => item.status === 'PENDENTE').length;
-                        const totalRevenue = periodItems.reduce((sum, item) => sum + item.price, 0);
+                        const canceledCount = periodItems.filter(item => item.status === 'CANCELADO').length;
+                        const billableItems = periodItems.filter(item => item.status !== 'CANCELADO');
+                        const totalRevenue = billableItems.reduce((sum, item) => sum + item.price, 0);
+                        const averageRevenue = billableItems.length ? totalRevenue / billableItems.length : 0;
                         const searchTerm = reportState.search.toLowerCase().trim();
                         const filtered = periodItems.filter(item => {
                             const matchesStatus = reportState.filter === 'ALL' || item.status === reportState.filter;
@@ -591,11 +758,26 @@
                         const totalEl = document.getElementById('kpi-total');
                         const confirmedEl = document.getElementById('kpi-confirmed');
                         const pendingEl = document.getElementById('kpi-pending');
+                        const canceledEl = document.getElementById('kpi-canceled');
                         const revenueEl = document.getElementById('kpi-revenue');
+                        const conversionNote = document.getElementById('kpi-conversion-note');
+                        const canceledNote = document.getElementById('kpi-canceled-note');
+                        const ticketNote = document.getElementById('kpi-ticket-note');
                         if (totalEl) totalEl.textContent = String(totalCount);
                         if (confirmedEl) confirmedEl.textContent = String(confirmedCount);
                         if (pendingEl) pendingEl.textContent = String(pendingCount);
+                        if (canceledEl) canceledEl.textContent = String(canceledCount);
                         if (revenueEl) revenueEl.textContent = formatCurrency(totalRevenue);
+                        if (conversionNote) conversionNote.textContent = `${totalCount ? Math.round(confirmedCount / totalCount * 100) : 0}% de conversão`;
+                        if (canceledNote) canceledNote.textContent = canceledCount ? `${canceledCount} cancelamento(s)` : 'Nenhum cancelamento';
+                        if (ticketNote) ticketNote.textContent = `Ticket médio: ${formatCurrency(averageRevenue)}`;
+                        document.querySelectorAll('.filter-tab').forEach(tab => {
+                            const count = tab.dataset.filter === 'ALL'
+                                ? totalCount
+                                : periodItems.filter(item => item.status === tab.dataset.filter).length;
+                            const countLabel = tab.querySelector('.small-count');
+                            if (countLabel) countLabel.textContent = `(${count})`;
+                        });
 
                         const tbody = document.getElementById('report-tbody');
                         const empty = document.getElementById('report-empty');
@@ -606,18 +788,19 @@
                         if (!filtered.length) {
                             tbody.innerHTML = '';
                             empty.classList.add('visible');
-                            countLabel.textContent = `Exibindo 0 de ${reportData.length} agendamentos`;
+                            countLabel.textContent = `Exibindo 0 de ${totalCount} agendamentos`;
                             subtotal.textContent = formatCurrency(0);
+                            fitReportHistory();
                             return;
                         }
 
                         empty.classList.remove('visible');
-                        const subtotalValue = filtered.reduce((sum, item) => sum + item.price, 0);
-                        countLabel.textContent = `Exibindo ${filtered.length} de ${reportData.length} agendamentos`;
+                        const subtotalValue = filtered.filter(item => item.status !== 'CANCELADO').reduce((sum, item) => sum + item.price, 0);
+                        countLabel.textContent = `Exibindo ${filtered.length} de ${totalCount} agendamentos`;
                         subtotal.textContent = formatCurrency(subtotalValue);
 
                         tbody.innerHTML = filtered.map(item => {
-                            const isConfirmed = item.status === 'CONFIRMADO';
+                            const statusClass = item.status === 'CONFIRMADO' ? 'confirmado' : item.status === 'CANCELADO' ? 'cancelado' : 'pendente';
                             return `
                                 <tr>
                                     <td>
@@ -632,7 +815,7 @@
                                     <td class="report-professional">${escapeHtml(item.professional)}</td>
                                     <td class="report-date">${escapeHtml(item.formattedDate)} às ${escapeHtml(item.time)}</td>
                                     <td>
-                                        <span class="report-status ${isConfirmed ? 'confirmado' : 'pendente'}">
+                                        <span class="report-status ${statusClass}">
                                             <span class="dot"></span>
                                             ${escapeHtml(item.status)}
                                         </span>
@@ -641,6 +824,7 @@
                                 </tr>
                             `;
                         }).join('');
+                        fitReportHistory();
                     }
 
                     const bindReportFilters = () => {
@@ -697,14 +881,14 @@
                                 <div class="report-title">
                                     <h2>Relatórios</h2>
                                     <p>Acompanhe o desempenho dos seus atendimentos e faturamento previsto.</p>
+                                    ${loadError ? `<p class="report-error" role="alert">${escapeHtml(loadError)}</p>` : ''}
                                 </div>
                                 <div class="report-controls">
                                     <div class="report-search-wrap">
                                         <span class="search-icon">⌕</span>
                                         <select id="report-period-select" class="report-select" aria-label="Selecionar período">
                                             <option value="all">Todos os períodos</option>
-                                            <option value="2026-11">Novembro 2026</option>
-                                            <option value="2025-11">Novembro 2025</option>
+                                            ${reportPeriods}
                                         </select>
                                     </div>
                                     <button id="report-export-btn" class="report-export-btn" type="button">⬇ Exportar PDF</button>
@@ -717,7 +901,7 @@
                                         <span class="report-kpi-label">Agendamentos</span>
                                         <span class="report-kpi-icon report-kpi-icon--default">📅</span>
                                     </div>
-                                    <div id="kpi-total" class="report-kpi-value">5</div>
+                                    <div id="kpi-total" class="report-kpi-value">0</div>
                                     <p class="report-kpi-note">Total registrado</p>
                                 </article>
                                 <article class="report-kpi">
@@ -725,15 +909,15 @@
                                         <span class="report-kpi-label">Confirmados</span>
                                         <span class="report-kpi-icon report-kpi-icon--success">✓</span>
                                     </div>
-                                    <div id="kpi-confirmed" class="report-kpi-value">4</div>
-                                    <p class="report-kpi-note">80% de conversão</p>
+                                    <div id="kpi-confirmed" class="report-kpi-value">0</div>
+                                    <p id="kpi-conversion-note" class="report-kpi-note">0% de conversão</p>
                                 </article>
                                 <article class="report-kpi">
                                     <div class="report-kpi-top">
                                         <span class="report-kpi-label">Pendentes</span>
                                         <span class="report-kpi-icon report-kpi-icon--warning">◔</span>
                                     </div>
-                                    <div id="kpi-pending" class="report-kpi-value">1</div>
+                                    <div id="kpi-pending" class="report-kpi-value">0</div>
                                     <p class="report-kpi-note">Aguardando confirmação</p>
                                 </article>
                                 <article class="report-kpi">
@@ -742,15 +926,15 @@
                                         <span class="report-kpi-icon report-kpi-icon--danger">✕</span>
                                     </div>
                                     <div id="kpi-canceled" class="report-kpi-value">0</div>
-                                    <p class="report-kpi-note">Nenhum cancelamento</p>
+                                    <p id="kpi-canceled-note" class="report-kpi-note">Nenhum cancelamento</p>
                                 </article>
                                 <article class="report-kpi highlight">
                                     <div class="report-kpi-top">
                                         <span class="report-kpi-label">Faturamento previsto</span>
                                         <span class="report-kpi-icon report-kpi-icon--highlight">💰</span>
                                     </div>
-                                    <div id="kpi-revenue" class="report-kpi-value">R$ 215,00</div>
-                                    <p class="report-kpi-note">Ticket médio: R$ 43,00</p>
+                                    <div id="kpi-revenue" class="report-kpi-value">R$ 0,00</div>
+                                    <p id="kpi-ticket-note" class="report-kpi-note">Ticket médio: R$ 0,00</p>
                                 </article>
                             </section>
 
@@ -762,9 +946,10 @@
                                     </div>
                                     <div class="report-controls">
                                         <ul class="filter-group" role="tablist" aria-label="Filtrar por status">
-                                            <li><button class="filter-tab active" type="button" data-filter="ALL">Todos <span class="small-count">(5)</span></button></li>
-                                            <li><button class="filter-tab" type="button" data-filter="CONFIRMADO">Confirmados <span class="small-count">(4)</span></button></li>
-                                            <li><button class="filter-tab" type="button" data-filter="PENDENTE">Pendentes <span class="small-count">(1)</span></button></li>
+                                            <li><button class="filter-tab active" type="button" data-filter="ALL">Todos <span class="small-count">(0)</span></button></li>
+                                            <li><button class="filter-tab" type="button" data-filter="CONFIRMADO">Confirmados <span class="small-count">(0)</span></button></li>
+                                            <li><button class="filter-tab" type="button" data-filter="PENDENTE">Pendentes <span class="small-count">(0)</span></button></li>
+                                            <li><button class="filter-tab" type="button" data-filter="CANCELADO">Cancelados <span class="small-count">(0)</span></button></li>
                                         </ul>
                                         <div class="report-search-wrap">
                                             <span class="search-icon">⌕</span>
@@ -772,7 +957,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="report-table-wrap">
+                                <div class="report-table-wrap report-history-wrap" role="region" aria-label="Histórico de agendamentos" tabindex="0">
                                     <table class="report-table">
                                         <thead>
                                             <tr>
@@ -794,8 +979,8 @@
                                     <button id="report-reset-filters" class="report-reset" type="button">Limpar filtros</button>
                                 </div>
                                 <div class="report-foot">
-                                    <span id="table-count-label">Exibindo 5 de 5 agendamentos</span>
-                                    <span>Total listado: <strong id="table-subtotal">R$ 215,00</strong></span>
+                                    <span id="table-count-label">Exibindo 0 de 0 agendamentos</span>
+                                    <span>Total listado: <strong id="table-subtotal">R$ 0,00</strong></span>
                                 </div>
                             </section>
                         </div>
@@ -812,14 +997,19 @@
             if (section === 'configuracoes') {
                 const defaultConfig = {
                     nome: 'HoraCerta',
-                    telefone: '(82) 99999-9999',
+                    telefone: '',
                     instagram: '@horacerta.barbearia',
                     endereco: 'Av. Álvaro Otacílio, 1420 - Ponta Verde, Maceió - AL',
                     mensagem: 'Cortes modernos, alinhamento de fios, barba na navalha e selagem capilar com hora marcada.',
-                    horario: '08:00-18:00'
+                    horario: '08:00-18:00',
+                    intervaloMinutos: 30,
+                    antecedenciaMinutos: 0,
+                    politicaCancelamentoHoras: 2,
+                    confirmacaoAutomatica: true,
+                    lembretesWhatsapp: true
                 };
                 const configSettings = { ...defaultConfig, ...settings };
-                const weeklySchedule = [
+                const defaultWeeklySchedule = [
                     { day: 'Segunda-feira', short: 'Seg', open: true, start: '08:00', lunchStart: '12:00', lunchEnd: '13:00', end: '18:00' },
                     { day: 'Terça-feira', short: 'Ter', open: true, start: '08:00', lunchStart: '12:00', lunchEnd: '13:00', end: '18:00' },
                     { day: 'Quarta-feira', short: 'Qua', open: true, start: '08:00', lunchStart: '12:00', lunchEnd: '13:00', end: '18:00' },
@@ -828,6 +1018,10 @@
                     { day: 'Sábado', short: 'Sáb', open: true, start: '08:00', lunchStart: '12:00', lunchEnd: '12:30', end: '17:00' },
                     { day: 'Domingo', short: 'Dom', open: false, start: '09:00', lunchStart: '12:00', lunchEnd: '13:00', end: '14:00' }
                 ];
+                const weeklySchedule = defaultWeeklySchedule.map((day, index) => ({
+                    ...day,
+                    ...(Array.isArray(configSettings.horariosSemana) ? configSettings.horariosSemana[index] : {})
+                }));
                 const configMarkup = `
                     <div class="config-shell">
                         <div class="config-page-header">
@@ -837,6 +1031,7 @@
                                     <span id="config-unsaved" class="config-unsaved hidden">● Alterações não salvas</span>
                                 </div>
                                 <div class="config-header-note">Personalize os dados da sua barbearia, horários de atendimento e regras do agendamento online.</div>
+                                ${loadError ? `<p class="config-load-error" role="alert">${escapeHtml(loadError)}</p>` : ''}
                             </div>
                             <div class="config-save-actions">
                                 <button type="button" id="config-reset-defaults" class="config-btn secondary">Restaurar padrão</button>
@@ -894,8 +1089,8 @@
                                             </div>
                                         </div>
                                         <div class="config-save-actions">
-                                            <input id="default-hours-summary" type="text" value="${escapeHtml(configSettings.horario)}" aria-label="Horário resumido" style="min-height:38px; border-radius:10px; border:1px solid #E2E8F0; padding:0 12px; width:110px; font-weight:700; text-align:center;">
-                                            <button type="button" id="apply-all-hours-btn" class="config-btn secondary" style="padding:8px 12px;">Aplicar</button>
+                                            <input id="default-hours-summary" type="text" value="${escapeHtml(configSettings.horario)}" aria-label="Horário resumido" placeholder="08:00-18:00" title="Formato: HH:MM-HH:MM" style="min-height:38px; border-radius:10px; border:1px solid #E2E8F0; padding:0 12px; width:110px; font-weight:700; text-align:center;">
+                                            <button type="button" id="apply-all-hours-btn" class="config-btn secondary" aria-label="Aplicar aos dias abertos" title="Aplicar este horário a todos os dias abertos" style="padding:8px 12px;">Aplicar</button>
                                         </div>
                                     </div>
                                     <div class="config-card-body">
@@ -909,7 +1104,7 @@
                                             <div class="config-card-icon">⚙️</div>
                                             <div>
                                                 <h3>Regras de Agendamento & Notificações</h3>
-                                                <p>Controle o intervalo da agenda, antecedência e automações via WhatsApp.</p>
+                                                <p>Controle os intervalos, a antecedência e as preferências de notificação.</p>
                                             </div>
                                         </div>
                                     </div>
@@ -918,29 +1113,29 @@
                                             <div class="config-field">
                                                 <label for="slot-interval">Intervalo entre horários</label>
                                                 <select id="slot-interval">
-                                                    <option value="15">A cada 15 minutos</option>
-                                                    <option value="30" selected>A cada 30 minutos</option>
-                                                    <option value="45">A cada 45 minutos</option>
-                                                    <option value="60">A cada 1 hora</option>
+                                                    <option value="15" ${Number(configSettings.intervaloMinutos) === 15 ? 'selected' : ''}>A cada 15 minutos</option>
+                                                    <option value="30" ${Number(configSettings.intervaloMinutos) === 30 ? 'selected' : ''}>A cada 30 minutos</option>
+                                                    <option value="45" ${Number(configSettings.intervaloMinutos) === 45 ? 'selected' : ''}>A cada 45 minutos</option>
+                                                    <option value="60" ${Number(configSettings.intervaloMinutos) === 60 ? 'selected' : ''}>A cada 1 hora</option>
                                                 </select>
                                             </div>
                                             <div class="config-field">
                                                 <label for="min-advance">Antecedência mínima</label>
                                                 <select id="min-advance">
-                                                    <option value="0">Sem antecedência</option>
-                                                    <option value="30">30 minutos antes</option>
-                                                    <option value="60" selected>1 hora antes</option>
-                                                    <option value="120">2 horas antes</option>
-                                                    <option value="1440">24 horas antes</option>
+                                                    <option value="0" ${Number(configSettings.antecedenciaMinutos) === 0 ? 'selected' : ''}>Sem antecedência</option>
+                                                    <option value="30" ${Number(configSettings.antecedenciaMinutos) === 30 ? 'selected' : ''}>30 minutos antes</option>
+                                                    <option value="60" ${Number(configSettings.antecedenciaMinutos) === 60 ? 'selected' : ''}>1 hora antes</option>
+                                                    <option value="120" ${Number(configSettings.antecedenciaMinutos) === 120 ? 'selected' : ''}>2 horas antes</option>
+                                                    <option value="1440" ${Number(configSettings.antecedenciaMinutos) === 1440 ? 'selected' : ''}>24 horas antes</option>
                                                 </select>
                                             </div>
                                             <div class="config-field">
                                                 <label for="cancel-policy">Política de cancelamento</label>
                                                 <select id="cancel-policy">
-                                                    <option value="1">Até 1h antes do horário</option>
-                                                    <option value="2" selected>Até 2h antes do horário</option>
-                                                    <option value="4">Até 4h antes do horário</option>
-                                                    <option value="24">Até 24h antes do horário</option>
+                                                    <option value="1" ${Number(configSettings.politicaCancelamentoHoras) === 1 ? 'selected' : ''}>Até 1h antes do horário</option>
+                                                    <option value="2" ${Number(configSettings.politicaCancelamentoHoras) === 2 ? 'selected' : ''}>Até 2h antes do horário</option>
+                                                    <option value="4" ${Number(configSettings.politicaCancelamentoHoras) === 4 ? 'selected' : ''}>Até 4h antes do horário</option>
+                                                    <option value="24" ${Number(configSettings.politicaCancelamentoHoras) === 24 ? 'selected' : ''}>Até 24h antes do horário</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -953,24 +1148,24 @@
                                                         <p>Novos horários marcados pelo link público entram direto como “Confirmado”.</p>
                                                     </div>
                                                 </div>
-                                                <label class="switch-control"><input id="toggle-auto-confirm" type="checkbox" checked><span class="switch-slider"></span></label>
+                                                <label class="switch-control"><input id="toggle-auto-confirm" type="checkbox" ${configSettings.confirmacaoAutomatica ? 'checked' : ''}><span class="switch-slider"></span></label>
                                             </div>
                                             <div class="config-switch">
                                                 <div class="config-switch-info">
                                                     <div class="config-switch-icon">💬</div>
                                                     <div>
-                                                        <h4>Lembretes automáticos via WhatsApp</h4>
-                                                        <p>Envia mensagem de confirmação e lembrete 2 horas antes do atendimento.</p>
+                                                        <h4>Preferência para lembretes via WhatsApp</h4>
+                                                        <p>Salva sua preferência. O envio automático ainda não está integrado.</p>
                                                     </div>
                                                 </div>
-                                                <label class="switch-control"><input id="toggle-whatsapp" type="checkbox" checked><span class="switch-slider"></span></label>
+                                                <label class="switch-control"><input id="toggle-whatsapp" type="checkbox" ${configSettings.lembretesWhatsapp ? 'checked' : ''}><span class="switch-slider"></span></label>
                                             </div>
                                         </div>
                                     </div>
                                 </section>
 
                                 <div class="config-footer-save">
-                                    <div class="hint">As alterações entram em vigor imediatamente na sua página pública.</div>
+                                    <div class="hint">Aplique aos dias abertos e clique em Salvar configurações para publicar as alterações.</div>
                                     <button type="submit" id="config-save-bottom" class="config-btn primary">Salvar configurações</button>
                                 </div>
                             </div>
@@ -1015,7 +1210,7 @@
                                 <section class="config-tips">
                                     <h4>Dicas para reduzir faltas</h4>
                                     <ul>
-                                        <li>Mantenha os lembretes via WhatsApp ativados para reduzir o “no-show” em até 45%.</li>
+                                        <li>A preferência de lembretes fica salva, mas o envio automático via WhatsApp ainda não está integrado.</li>
                                         <li>Configure uma pausa de almoço fixa para evitar encaixes acidentais no meio do dia.</li>
                                         <li>Adicione seu telefone com DDD para habilitar o botão direto de contato na página pública.</li>
                                     </ul>
@@ -1064,7 +1259,9 @@
                     const instagram = businessInstagramInput.value.trim() || '@horacerta';
                     const address = businessAddressInput.value.trim() || 'Endereço não informado';
                     const bio = businessBioInput.value.trim() || 'Agende seu horário online de forma rápida e prática.';
-                    const hoursValue = defaultHoursSummary.value.trim() || '08:00-18:00';
+                    const todayIndex = (new Date().getDay() + 6) % 7;
+                    const today = configState.weeklySchedule[todayIndex];
+                    const hoursValue = today.open ? `${today.start} - ${today.end}` : 'Fechado hoje';
                     document.getElementById('preview-avatar').textContent = initialsFor(name);
                     document.getElementById('preview-name').textContent = name;
                     document.getElementById('preview-instagram').textContent = instagram.startsWith('@') ? instagram : `@${instagram}`;
@@ -1145,17 +1342,36 @@
                         updateConfigPreview();
                     });
                 });
+                document.querySelectorAll('#slot-interval, #min-advance, #cancel-policy, #toggle-auto-confirm, #toggle-whatsapp').forEach(el => {
+                    el.addEventListener('change', markConfigUnsaved);
+                });
 
                 document.getElementById('apply-all-hours-btn').addEventListener('click', () => {
                     const raw = defaultHoursSummary.value.trim();
                     const match = raw.match(/^(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})$/);
                     if (!match) {
-                        if (typeof window.showNotification === 'function') {
-                            window.showNotification('Use o formato HH:MM-HH:MM (ex: 08:00-18:00)');
-                        }
+                        const message = 'Use o formato HH:MM-HH:MM (ex: 08:00-18:00).';
+                        if (typeof window.showNotification === 'function') window.showNotification(message);
+                        else alert(message);
                         return;
                     }
                     const [, newStart, newEnd] = match;
+                    const isValidClockTime = value => {
+                        const [hours, minutes] = value.split(':').map(Number);
+                        return hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60;
+                    };
+                    const toMinutes = value => {
+                        const [hours, minutes] = value.split(':').map(Number);
+                        return hours * 60 + minutes;
+                    };
+                    const startMinutes = toMinutes(newStart);
+                    const endMinutes = toMinutes(newEnd);
+                    if (!isValidClockTime(newStart) || !isValidClockTime(newEnd) || startMinutes >= endMinutes) {
+                        const message = 'Informe horários válidos no formato HH:MM e um fechamento depois da abertura.';
+                        if (typeof window.showNotification === 'function') window.showNotification(message);
+                        else alert(message);
+                        return;
+                    }
                     configState.weeklySchedule.forEach(day => {
                         if (day.open) {
                             day.start = newStart;
@@ -1165,6 +1381,9 @@
                     renderConfigSchedule();
                     updateConfigPreview();
                     markConfigUnsaved();
+                    const message = 'Horários aplicados aos dias abertos. Clique em “Salvar configurações” para gravar.';
+                    if (typeof window.showNotification === 'function') window.showNotification(message);
+                    else alert(message);
                 });
 
                 document.getElementById('copy-link-btn').addEventListener('click', () => {
@@ -1183,7 +1402,7 @@
                     }
                 });
 
-                function handleConfigSave(event) {
+                async function handleConfigSave(event) {
                     event.preventDefault();
                     if (!businessNameInput.value.trim()) {
                         businessNameInput.focus();
@@ -1192,9 +1411,50 @@
                         }
                         return;
                     }
-                    configUnsaved.classList.add('hidden');
-                    if (typeof window.showNotification === 'function') {
-                        window.showNotification('Configurações salvas com sucesso!');
+                    const form = document.getElementById('config-settings-form');
+                    if (!form.reportValidity()) return;
+
+                    const saveButtons = [
+                        document.getElementById('config-save-top'),
+                        document.getElementById('config-save-bottom')
+                    ];
+                    saveButtons.forEach(button => { button.disabled = true; });
+                    const payload = {
+                        nome: businessNameInput.value.trim(),
+                        telefone: businessPhoneInput.value.trim(),
+                        instagram: businessInstagramInput.value.trim(),
+                        endereco: businessAddressInput.value.trim(),
+                        mensagem: businessBioInput.value.trim(),
+                        horario: defaultHoursSummary.value.trim(),
+                        horariosSemana: configState.weeklySchedule.map(({ open, start, lunchStart, lunchEnd, end }) => ({
+                            open, start, lunchStart, lunchEnd, end
+                        })),
+                        intervaloMinutos: Number(document.getElementById('slot-interval').value),
+                        antecedenciaMinutos: Number(document.getElementById('min-advance').value),
+                        politicaCancelamentoHoras: Number(document.getElementById('cancel-policy').value),
+                        confirmacaoAutomatica: document.getElementById('toggle-auto-confirm').checked,
+                        lembretesWhatsapp: document.getElementById('toggle-whatsapp').checked
+                    };
+                    try {
+                        const saved = await apiRequest('/api/configuracoes', {
+                            method: 'PUT',
+                            body: JSON.stringify(payload)
+                        });
+                        configUnsaved.classList.add('hidden');
+                        applyClientBusinessInfo(saved);
+                        updateConfigPreview();
+                        if (typeof window.showNotification === 'function') {
+                            window.showNotification('Configurações salvas e aplicadas à visão do cliente.');
+                        }
+                    } catch (error) {
+                        markConfigUnsaved();
+                        if (typeof window.showNotification === 'function') {
+                            window.showNotification(error.message || 'Não foi possível salvar as configurações.');
+                        } else {
+                            alert(error.message || 'Não foi possível salvar as configurações.');
+                        }
+                    } finally {
+                        saveButtons.forEach(button => { button.disabled = false; });
                     }
                 }
 
@@ -1203,25 +1463,22 @@
                 document.getElementById('config-save-bottom').addEventListener('click', handleConfigSave);
                 document.getElementById('config-reset-defaults').addEventListener('click', () => {
                     businessNameInput.value = 'HoraCerta';
-                    businessPhoneInput.value = '(82) 99999-9999';
+                    businessPhoneInput.value = '';
                     businessInstagramInput.value = '@horacerta.barbearia';
                     businessAddressInput.value = 'Av. Álvaro Otacílio, 1420 - Ponta Verde, Maceió - AL';
                     businessBioInput.value = 'Cortes modernos, alinhamento de fios, barba na navalha e selagem capilar com hora marcada.';
                     defaultHoursSummary.value = '08:00-18:00';
-                    configState.weeklySchedule = [
-                        { day: 'Segunda-feira', short: 'Seg', open: true, start: '08:00', lunchStart: '12:00', lunchEnd: '13:00', end: '18:00' },
-                        { day: 'Terça-feira', short: 'Ter', open: true, start: '08:00', lunchStart: '12:00', lunchEnd: '13:00', end: '18:00' },
-                        { day: 'Quarta-feira', short: 'Qua', open: true, start: '08:00', lunchStart: '12:00', lunchEnd: '13:00', end: '18:00' },
-                        { day: 'Quinta-feira', short: 'Qui', open: true, start: '08:00', lunchStart: '12:00', lunchEnd: '13:00', end: '18:00' },
-                        { day: 'Sexta-feira', short: 'Sex', open: true, start: '08:00', lunchStart: '12:00', lunchEnd: '13:00', end: '19:00' },
-                        { day: 'Sábado', short: 'Sáb', open: true, start: '08:00', lunchStart: '12:00', lunchEnd: '12:30', end: '17:00' },
-                        { day: 'Domingo', short: 'Dom', open: false, start: '09:00', lunchStart: '12:00', lunchEnd: '13:00', end: '14:00' }
-                    ];
+                    configState.weeklySchedule = defaultWeeklySchedule.map(day => ({ ...day }));
+                    document.getElementById('slot-interval').value = '30';
+                    document.getElementById('min-advance').value = '0';
+                    document.getElementById('cancel-policy').value = '2';
+                    document.getElementById('toggle-auto-confirm').checked = true;
+                    document.getElementById('toggle-whatsapp').checked = true;
                     renderConfigSchedule();
                     updateConfigPreview();
-                    configUnsaved.classList.add('hidden');
+                    markConfigUnsaved();
                     if (typeof window.showNotification === 'function') {
-                        window.showNotification('Valores padrão restaurados.');
+                        window.showNotification('Padrões restaurados no formulário. Salve para aplicá-los.');
                     }
                 });
 
@@ -1254,6 +1511,7 @@
                 : `<h2>${config.title}</h2>`;
             if (section === 'relatorios') return;
             workspace.innerHTML = `${sectionHeader}${loadError ? `<p role="alert">${escapeHtml(loadError)}</p>` : ''}${rows}${forms[section] || ''}${serviceModal}${blockModal}${section === 'servicos' || section === 'bloqueios' ? '' : '<p id="dashboard-feedback" role="status"></p>'}`;
+            if (scrollableList) fitDashboardList();
         }
 
         function openServiceModal() {
@@ -1418,6 +1676,87 @@
             }
         }
 
+        let resolveAppointmentConfirmation = null;
+        let cancelAppointmentTrigger = null;
+
+        function confirmAppointmentCancellation(trigger) {
+            const modal = document.getElementById('cancel-appointment-modal');
+            if (!modal) return Promise.resolve(false);
+            cancelAppointmentTrigger = trigger;
+            modal.hidden = false;
+            modal.querySelector('[data-appointment-cancel-dismiss]')?.focus();
+            return new Promise(resolve => {
+                resolveAppointmentConfirmation = resolve;
+            });
+        }
+
+        function closeAppointmentConfirmation(confirmed) {
+            const modal = document.getElementById('cancel-appointment-modal');
+            if (modal) modal.hidden = true;
+            if (!confirmed) cancelAppointmentTrigger?.focus();
+            cancelAppointmentTrigger = null;
+            if (resolveAppointmentConfirmation) {
+                const resolve = resolveAppointmentConfirmation;
+                resolveAppointmentConfirmation = null;
+                resolve(confirmed);
+            }
+        }
+
+        let appointmentEditTrigger = null;
+
+        function openAppointmentEditor(id, data, horario, trigger) {
+            if (!Number.isInteger(id) || id <= 0) {
+                alert('Não foi possível identificar o agendamento selecionado.');
+                return;
+            }
+            const modal = document.getElementById('edit-appointment-modal');
+            if (!modal) return;
+            document.getElementById('appointment-edit-id').value = String(id);
+            document.getElementById('appointment-edit-date').value = data;
+            document.getElementById('appointment-edit-time').value = horario;
+            document.getElementById('appointment-edit-feedback').textContent = '';
+            appointmentEditTrigger = trigger;
+            modal.hidden = false;
+            document.getElementById('appointment-edit-date').focus();
+        }
+
+        function closeAppointmentEditor() {
+            const modal = document.getElementById('edit-appointment-modal');
+            if (modal) modal.hidden = true;
+            if (appointmentEditTrigger && document.body.contains(appointmentEditTrigger)) {
+                appointmentEditTrigger.focus();
+            }
+            appointmentEditTrigger = null;
+        }
+
+        let resolveAppointmentDeletion = null;
+        let deleteAppointmentTrigger = null;
+
+        function confirmAppointmentDeletion(trigger) {
+            const modal = document.getElementById('delete-appointment-modal');
+            if (!modal) return Promise.resolve(false);
+            deleteAppointmentTrigger = trigger;
+            modal.hidden = false;
+            modal.querySelector('[data-appointment-delete-dismiss]')?.focus();
+            return new Promise(resolve => {
+                resolveAppointmentDeletion = resolve;
+            });
+        }
+
+        function closeAppointmentDeletion(confirmed) {
+            const modal = document.getElementById('delete-appointment-modal');
+            if (modal) modal.hidden = true;
+            if (!confirmed && deleteAppointmentTrigger && document.body.contains(deleteAppointmentTrigger)) {
+                deleteAppointmentTrigger.focus();
+            }
+            deleteAppointmentTrigger = null;
+            if (resolveAppointmentDeletion) {
+                const resolve = resolveAppointmentDeletion;
+                resolveAppointmentDeletion = null;
+                resolve(confirmed);
+            }
+        }
+
         async function deleteService(id, name, button) {
             if (!Number.isInteger(id) || id <= 0) {
                 alert('Não foi possível identificar o serviço selecionado.');
@@ -1443,12 +1782,20 @@
             if (event.target.closest('[data-delete-confirm]')) closeDeleteConfirmation(true);
             if (event.target.id === 'delete-block-modal' || event.target.closest('[data-block-delete-cancel]')) closeBlockDeleteConfirmation(false);
             if (event.target.closest('[data-block-delete-confirm]')) closeBlockDeleteConfirmation(true);
+            if (event.target.id === 'cancel-appointment-modal' || event.target.closest('[data-appointment-cancel-dismiss]')) closeAppointmentConfirmation(false);
+            if (event.target.closest('[data-appointment-cancel-confirm]')) closeAppointmentConfirmation(true);
+            if (event.target.id === 'edit-appointment-modal' || event.target.closest('[data-appointment-edit-dismiss]') || event.target.closest('[data-appointment-editor-close]')) closeAppointmentEditor();
+            if (event.target.id === 'delete-appointment-modal' || event.target.closest('[data-appointment-delete-dismiss]')) closeAppointmentDeletion(false);
+            if (event.target.closest('[data-appointment-delete-confirm]')) closeAppointmentDeletion(true);
         });
         document.addEventListener('keydown', event => {
             if (event.key === 'Escape') closeServiceModal();
             if (event.key === 'Escape') closeBlockModal();
             if (event.key === 'Escape') closeDeleteConfirmation(false);
             if (event.key === 'Escape') closeBlockDeleteConfirmation(false);
+            if (event.key === 'Escape') closeAppointmentConfirmation(false);
+            if (event.key === 'Escape') closeAppointmentEditor();
+            if (event.key === 'Escape') closeAppointmentDeletion(false);
         });
 
         async function saveDashboardRecord(event, section, method = 'POST') {
@@ -1566,8 +1913,25 @@
         // Interações dinâmicas do cliente e do painel. Os endpoints seguem a API REST usada acima.
         (() => {
             const fallbackSlots = ['09:00', '09:30', '10:00', '10:30', '11:00', '14:00', '14:30', '15:00', '15:30'];
+            const fullDaySlots = Array.from({ length: 48 }, (_, index) => {
+                const hour = String(Math.floor(index / 2)).padStart(2, '0');
+                return `${hour}:${index % 2 ? '30' : '00'}`;
+            });
             const state = { service: 'Corte Masculino', serviceId: null, price: 40, duration: '30 min', professional: 'Lucas Almeida', professionalId: null, date: new Date(), time: '11:00', month: new Date() };
             const agendaState = { date: new Date(), view: 'week', requestId: 0 };
+            const receiptStorageKey = 'horacerta-confirmed-booking';
+            const viewStorageKey = 'horacerta-view';
+            const dashboardSectionStorageKey = 'horacerta-dashboard-section';
+            const receiptFields = {
+                service: '#rec-service',
+                professional: '#rec-pro',
+                date: '#rec-date',
+                time: '#rec-time',
+                price: '#rec-price'
+            };
+            let cancellationPolicyText = 'Política de cancelamento indisponível.';
+            window.receiptAwaitingUser = false;
+            let restoringViewState = false;
             let blockedClientDates = new Set();
             let availabilityRequestId = 0;
             let clientBlocksRequestId = 0;
@@ -1578,6 +1942,67 @@
             const money = value => `R$ ${Number(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
             const dateLabel = date => `${date.getDate()} de ${['jan.', 'fev.', 'mar.', 'abr.', 'mai.', 'jun.', 'jul.', 'ago.', 'set.', 'out.', 'nov.', 'dez.'][date.getMonth()]} de ${date.getFullYear()}`;
             const setText = (selector, value) => { const el = document.querySelector(selector); if (el) el.textContent = value; };
+            const renderReceipt = receipt => {
+                Object.entries(receiptFields).forEach(([key, selector]) => setText(selector, receipt[key]));
+                setText('#rec-cancellation-policy', receipt.cancellationPolicy || cancellationPolicyText);
+            };
+            const formatCancellationPolicy = hoursValue => {
+                const hours = Number(hoursValue);
+                if (![1, 2, 4, 24].includes(hours)) return 'Política de cancelamento indisponível.';
+                return `Cancele com pelo menos ${hours} ${hours === 1 ? 'hora' : 'horas'} de antecedência.`;
+            };
+            const saveReceipt = receipt => {
+                try {
+                    sessionStorage.setItem(receiptStorageKey, JSON.stringify(receipt));
+                } catch (error) {
+                    console.error('Não foi possível manter o comprovante nesta aba.', error);
+                }
+            };
+            const clearSavedReceipt = () => {
+                try {
+                    sessionStorage.removeItem(receiptStorageKey);
+                } catch (error) {
+                    console.error('Não foi possível limpar o comprovante salvo nesta aba.', error);
+                }
+            };
+            const readSessionValue = key => {
+                try {
+                    return sessionStorage.getItem(key);
+                } catch (error) {
+                    console.error(`Não foi possível recuperar a preferência "${key}".`, error);
+                    return null;
+                }
+            };
+            const saveSessionValue = (key, value) => {
+                try {
+                    sessionStorage.setItem(key, value);
+                } catch (error) {
+                    console.error(`Não foi possível salvar a preferência "${key}".`, error);
+                }
+            };
+            const restoreReceipt = () => {
+                let serializedReceipt;
+                try {
+                    serializedReceipt = sessionStorage.getItem(receiptStorageKey);
+                } catch (error) {
+                    console.error('Não foi possível recuperar o comprovante desta aba.', error);
+                    return;
+                }
+                if (!serializedReceipt) return;
+
+                try {
+                    const receipt = JSON.parse(serializedReceipt);
+                    if (!receipt || Object.keys(receiptFields).some(key => typeof receipt[key] !== 'string')) {
+                        throw new Error('Dados do comprovante salvos em formato inválido.');
+                    }
+                    renderReceipt(receipt);
+                    window.receiptAwaitingUser = true;
+                    window.goToStep(5);
+                } catch (error) {
+                    console.error('Não foi possível restaurar o comprovante salvo.', error);
+                    clearSavedReceipt();
+                }
+            };
             const updateSummary = () => {
                 setText('#summary-service', state.service); setText('#summary-pro', state.professional);
                 setText('#summary-date', dateLabel(state.date)); setText('#summary-time', state.time);
@@ -1657,11 +2082,18 @@
                 updateSummary();
             };
             window.goToStep = step => {
+                if (window.receiptAwaitingUser && step !== 5) return;
                 if (step === 4 && (!state.date || !state.time)) { notify('Selecione uma data e um horário.'); return; }
                 if (original.goToStep) original.goToStep(step);
                 else document.querySelectorAll('.step-content').forEach(el => el.classList.toggle('active', el.id === `step-${step}`));
                 if (step === 3) { renderCalendar(); loadAvailableSlots(); }
                 if (step === 4) updateSummary();
+            };
+            window.returnToBookingHome = () => {
+                clearSavedReceipt();
+                window.receiptAwaitingUser = false;
+                window.goToStep(1);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             };
 
             async function loadAvailableSlots() {
@@ -1669,31 +2101,49 @@
                 if (!container) return;
                 const requestId = ++availabilityRequestId;
                 const selectedDateKey = `${state.date.getFullYear()}-${String(state.date.getMonth() + 1).padStart(2, '0')}-${String(state.date.getDate()).padStart(2, '0')}`;
+                container.innerHTML = '<p class="availability-message" role="status">Carregando horários...</p>';
+                const renderSlots = (availableSlots, message = '') => {
+                    const available = new Set(availableSlots);
+                    const status = message ? `<p class="availability-message" role="status">${escapeHtml(message)}</p>` : '';
+                    const buttons = fullDaySlots.map(time => {
+                        const isAvailable = available.has(time);
+                        return `<button type="button" class="slot${time === state.time && isAvailable ? ' active' : ''}" aria-label="${time} - ${isAvailable ? 'disponível' : 'indisponível'}"${isAvailable ? ` onclick="selectTime('${time}', this)"` : ' disabled'}>${time}</button>`;
+                    }).join('');
+                    container.innerHTML = `${status}${buttons}`;
+                };
                 if (blockedClientDates.has(selectedDateKey)) {
                     state.time = '';
-                    container.innerHTML = '<p>Este profissional não atende nesta data.</p>';
+                    renderSlots([], 'Este profissional não atende nesta data.');
                     updateSummary();
                     return;
                 }
-                let slots = fallbackSlots;
+                let slots = [];
                 try {
-                    const isoDate = `${state.date.getFullYear()}-${String(state.date.getMonth() + 1).padStart(2, '0')}-${String(state.date.getDate()).padStart(2, '0')}`;
-                    const query = new URLSearchParams({ data: isoDate, profissional: state.professional, servico: state.service });
-                    const result = await apiRequest(`/api/horarios?${query}`);
-                    const available = payloadArray(result);
-                    if (Array.isArray(result) || Array.isArray(result?.dados) || Array.isArray(result?.data) || Array.isArray(result?.items)) {
-                        slots = available.map(item => typeof item === 'string' ? item : (item.horario || item.hora || item.time)).filter(Boolean);
+                    if (!Number.isInteger(state.professionalId) || !Number.isInteger(state.serviceId)) {
+                        throw new Error('Selecione um serviço e profissional válidos para consultar a disponibilidade.');
                     }
-                } catch (_) { /* mantém horários de demonstração se a API de disponibilidade não existir */ }
+                    const query = new URLSearchParams({ data: selectedDateKey, servicoId: String(state.serviceId) });
+                    const result = await apiRequest(`/api/profissionais/${state.professionalId}/disponibilidade?${query}`);
+                    if (!Array.isArray(result?.horariosDisponiveis)) {
+                        throw new Error('A API não retornou os horários disponíveis no formato esperado.');
+                    }
+                    slots = fullDaySlots.filter(time => result.horariosDisponiveis.includes(time));
+                } catch (error) {
+                    if (requestId !== availabilityRequestId) return;
+                    state.time = '';
+                    renderSlots([], error.message || 'Não foi possível carregar os horários disponíveis.');
+                    updateSummary();
+                    return;
+                }
                 if (requestId !== availabilityRequestId) return;
                 if (blockedClientDates.has(selectedDateKey)) {
                     state.time = '';
-                    container.innerHTML = '<p>Este profissional não atende nesta data.</p>';
+                    renderSlots([], 'Este profissional não atende nesta data.');
                     updateSummary();
                     return;
                 }
-                container.innerHTML = slots.length ? slots.map(time => `<button type="button" class="slot${time === state.time ? ' active' : ''}" onclick="selectTime('${escapeHtml(time)}', this)">${escapeHtml(time)}</button>`).join('') : '<p>Não há horários disponíveis nesta data.</p>';
                 if (!slots.includes(state.time)) state.time = slots[0] || '';
+                renderSlots(slots, slots.length ? '' : 'Não há horários disponíveis nesta data.');
                 updateSummary();
             }
 
@@ -1739,6 +2189,18 @@
             }
 
             async function loadClientOptions() {
+                try {
+                    const settings = await apiRequest('/api/configuracoes');
+                    cancellationPolicyText = formatCancellationPolicy(settings?.politicaCancelamentoHoras);
+                    applyClientBusinessInfo(settings);
+                    if (window.receiptAwaitingUser) setText('#rec-cancellation-policy', cancellationPolicyText);
+                } catch (error) {
+                    const feedback = document.getElementById('client-config-feedback');
+                    if (feedback) {
+                        feedback.textContent = error.message || 'Não foi possível carregar as informações do estabelecimento.';
+                        feedback.hidden = false;
+                    }
+                }
                 try {
                     serviceOptions = payloadArray(await apiRequest('/api/servicos'));
                     renderClientServices();
@@ -1789,8 +2251,18 @@
                     };
                     await apiRequest('/api/agendamentos', { method: 'POST', body: JSON.stringify(data) });
                     updateSummary();
-                    [['rec-service', state.service], ['rec-pro', state.professional], ['rec-date', dateLabel(state.date)], ['rec-time', state.time], ['rec-price', money(state.price)]].forEach(([id, value]) => setText(`#${id}`, value));
-                    if (original.goToStep) original.goToStep(5); else window.goToStep(5);
+                    const receipt = {
+                        service: state.service,
+                        professional: state.professional,
+                        date: dateLabel(state.date),
+                        time: state.time,
+                        price: money(state.price),
+                        cancellationPolicy: cancellationPolicyText
+                    };
+                    renderReceipt(receipt);
+                    saveReceipt(receipt);
+                    window.receiptAwaitingUser = true;
+                    window.goToStep(5);
                 } catch (error) {
                     const message = error.message || 'Não foi possível confirmar o agendamento.';
                     if (message.includes('RF04 - Choque de horário')) {
@@ -1879,6 +2351,7 @@
             const renderAgenda = (records, blocks) => {
                 const table = document.querySelector('.schedule-table tbody');
                 if (!table) return;
+                const activeRecords = records.filter(record => String(record.status || '').toUpperCase() !== 'CANCELADO');
                 const [start, end] = agendaRange();
                 const headers = document.querySelector('.schedule-table thead');
                 const blockedDates = new Set(blocks.filter(isFullDayBlock).map(block => block.data));
@@ -1892,7 +2365,7 @@
                         rows += '<tr>';
                         for (let index = 0; index < 7; index++) {
                             const date = addDays(week, index);
-                            const dayRecords = records.filter(record => record.data === dateKey(date));
+                            const dayRecords = activeRecords.filter(record => record.data === dateKey(date));
                             const outside = date.getMonth() !== start.getMonth();
                             const dayKey = dateKey(date);
                             const dayBlocked = blockedDates.has(dayKey);
@@ -1913,9 +2386,9 @@
                     const blockedMark = blockedDates.has(dayKey) ? '<span class="schedule-day-blocked" title="Dia inteiro bloqueado">×</span>' : '';
                     return `<th${dayKey === dateKey(new Date()) ? ' class="today"' : ''}>${new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' }).format(date)}${blockedMark}</th>`;
                 }).join('')}</tr>`;
-                const times = [...new Set([...fallbackSlots, ...records.map(record => String(record.horario || record.hora || '').slice(0, 5)).filter(Boolean)])].sort();
+                const times = [...new Set([...fallbackSlots, ...activeRecords.map(record => String(record.horario || record.hora || '').slice(0, 5)).filter(Boolean)])].sort();
                 table.innerHTML = times.map(time => `<tr><td class="time-col">${escapeHtml(time)}</td>${dates.map(date => {
-                    const record = records.find(item => item.data === dateKey(date) && String(item.horario || item.hora || '').slice(0, 5) === time);
+                    const record = activeRecords.find(item => item.data === dateKey(date) && String(item.horario || item.hora || '').slice(0, 5) === time);
                     return `<td>${record ? bookingMarkup(record) : ''}</td>`;
                 }).join('')}</tr>`).join('');
             };
@@ -1941,6 +2414,88 @@
                     headers.innerHTML = '';
                 }
             }
+            async function refreshAppointmentViews() {
+                await loadDashboardSection('agendamentos');
+                await loadAgenda();
+            }
+
+            window.cancelAppointment = async (id, button) => {
+                if (!Number.isInteger(id) || id <= 0) {
+                    alert('Não foi possível identificar o agendamento selecionado.');
+                    return;
+                }
+                if (!await confirmAppointmentCancellation(button)) return;
+
+                button.disabled = true;
+                try {
+                    await apiRequest(`/api/agendamentos/${id}/cancelar`, {
+                        method: 'PATCH',
+                        body: JSON.stringify({ canceladoPor: 'PROFISSIONAL' })
+                    });
+                    await refreshAppointmentViews();
+                    if (typeof window.showNotification === 'function') {
+                        window.showNotification('Agendamento cancelado e removido do calendário.');
+                    }
+                } catch (error) {
+                    button.disabled = false;
+                    const message = error.message || 'Não foi possível cancelar o agendamento.';
+                    if (typeof window.showNotification === 'function') window.showNotification(message);
+                    else alert(message);
+                }
+            };
+            window.saveAppointmentEdit = async event => {
+                event.preventDefault();
+                const form = event.currentTarget;
+                if (!form.reportValidity()) return;
+                const id = Number(document.getElementById('appointment-edit-id').value);
+                const button = form.querySelector('[type="submit"]');
+                const feedback = document.getElementById('appointment-edit-feedback');
+                if (!Number.isInteger(id) || id <= 0) {
+                    feedback.textContent = 'Não foi possível identificar o agendamento selecionado.';
+                    return;
+                }
+
+                button.disabled = true;
+                try {
+                    await apiRequest(`/api/agendamentos/${id}`, {
+                        method: 'PATCH',
+                        body: JSON.stringify({
+                            data: document.getElementById('appointment-edit-date').value,
+                            horario: document.getElementById('appointment-edit-time').value
+                        })
+                    });
+                    closeAppointmentEditor();
+                    await refreshAppointmentViews();
+                    if (typeof window.showNotification === 'function') {
+                        window.showNotification('Agendamento atualizado com sucesso.');
+                    }
+                } catch (error) {
+                    feedback.textContent = error.message || 'Não foi possível editar o agendamento.';
+                } finally {
+                    button.disabled = false;
+                }
+            };
+            window.deleteAppointment = async (id, button) => {
+                if (!Number.isInteger(id) || id <= 0) {
+                    alert('Não foi possível identificar o agendamento selecionado.');
+                    return;
+                }
+                if (!await confirmAppointmentDeletion(button)) return;
+
+                button.disabled = true;
+                try {
+                    await apiRequest(`/api/agendamentos/${id}`, { method: 'DELETE' });
+                    await refreshAppointmentViews();
+                    if (typeof window.showNotification === 'function') {
+                        window.showNotification('Agendamento apagado permanentemente.');
+                    }
+                } catch (error) {
+                    button.disabled = false;
+                    const message = error.message || 'Não foi possível apagar o agendamento.';
+                    if (typeof window.showNotification === 'function') window.showNotification(message);
+                    else alert(message);
+                }
+            };
             window.setAgendaView = view => {
                 if (!['day', 'week', 'month'].includes(view)) return;
                 agendaState.view = view;
@@ -1972,6 +2527,9 @@
             window.openDashboardSection = (section, event) => {
                 if (previousOpen) previousOpen(section, event);
                 if (section === 'agenda') loadAgenda();
+                if (!restoringViewState && (section === 'agenda' || dashboardSections[section])) {
+                    saveSessionValue(dashboardSectionStorageKey, section);
+                }
             };
             const previousSwitch = window.switchView;
             window.switchView = view => {
@@ -1980,11 +2538,33 @@
                     document.querySelectorAll('.view-section').forEach(el => el.classList.toggle('active', el.id === `${view}-view`));
                     document.querySelectorAll('.switch-btn').forEach(el => el.classList.toggle('active', el.id === `btn-${view}-view`));
                 }
+                if (!restoringViewState && (view === 'dashboard' || view === 'client')) {
+                    saveSessionValue(viewStorageKey, view);
+                    if (view === 'dashboard') saveSessionValue(dashboardSectionStorageKey, 'agenda');
+                }
                 if (view === 'dashboard') loadAgenda();
                 if (view === 'client') loadClientOptions();
             };
+            const restoreViewState = () => {
+                const savedView = readSessionValue(viewStorageKey);
+                if (savedView !== 'dashboard') {
+                    window.switchView('client');
+                    return;
+                }
+
+                restoringViewState = true;
+                try {
+                    window.switchView('dashboard');
+                    const savedSection = readSessionValue(dashboardSectionStorageKey);
+                    if (savedSection && savedSection !== 'agenda' && dashboardSections[savedSection]) {
+                        window.openDashboardSection(savedSection);
+                    }
+                } finally {
+                    restoringViewState = false;
+                }
+            };
             state.month = new Date(state.date.getFullYear(), state.date.getMonth(), 1);
-            updateSummary(); renderCalendar(); loadClientOptions(); loadAgenda();
+            updateSummary(); renderCalendar(); restoreReceipt(); restoreViewState();
         })();
 </script>
 </body>

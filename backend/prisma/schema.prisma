@@ -117,10 +117,19 @@ model BloqueioAgenda {
 }
 
 model Configuracao {
-  id       Int    @id @default(1)
-  nome     String @default("HoraCerta")
-  telefone String @default("")
-  horario  String @default("08:00-18:00")
+  id                       Int     @id @default(1)
+  nome                     String  @default("HoraCerta")
+  telefone                 String  @default("")
+  instagram                String  @default("@horacerta.barbearia")
+  endereco                 String  @default("Av. Álvaro Otacílio, 1420 - Ponta Verde, Maceió - AL")
+  mensagem                 String  @default("Cortes modernos, alinhamento de fios, barba na navalha e selagem capilar com hora marcada.")
+  horario                  String  @default("08:00-18:00")
+  horariosSemana           String  @default("[]")
+  intervaloMinutos         Int     @default(30)
+  antecedenciaMinutos      Int     @default(0)
+  politicaCancelamentoHoras Int    @default(2)
+  confirmacaoAutomatica    Boolean @default(true)
+  lembretesWhatsapp        Boolean @default(true)
 
   @@map("configuracoes")
 }

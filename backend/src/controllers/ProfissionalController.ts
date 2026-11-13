@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../config/prisma';
 import { DisponibilidadeService, IntervaloOcupado } from '../services/DisponibilidadeService';
+import { horarioFuncionamentoNaData, obterConfiguracao } from '../services/ConfiguracaoService';
 
 const profissionalSchema = z.object({
   nome: z.string().min(2, 'O nome do profissional é obrigatório.'),
@@ -74,6 +75,8 @@ export class ProfissionalController {
         return;
       }
 
+      const configuracao = await obterConfiguracao();
+      const expedienteDia = horarioFuncionamentoNaData(configuracao, data);
       let duracaoServicoMinutos = 30;
       let servicoSelecionado = null;
 
@@ -116,19 +119,38 @@ export class ProfissionalController {
           referenciaId: bl.id,
         })),
       ];
+      const inicioIntervalo = DisponibilidadeService.paraMinutos(expedienteDia.lunchStart);
+      const fimIntervalo = DisponibilidadeService.paraMinutos(expedienteDia.lunchEnd);
+      if (expedienteDia.open && fimIntervalo > inicioIntervalo) {
+        intervalosOcupados.push({
+          horarioInicio: expedienteDia.lunchStart,
+          horarioFim: expedienteDia.lunchEnd,
+          origem: 'INTERVALO',
+        });
+      }
 
-      const grade = DisponibilidadeService.gerarGradeHorarios({
-        inicioExpediente: profissional.horarioInicioExpediente,
-        fimExpediente: profissional.horarioFimExpediente,
-        duracaoServicoMinutos,
-        ocupados: intervalosOcupados,
-      });
+      const grade = expedienteDia.open
+        ? DisponibilidadeService.gerarGradeHorarios({
+            inicioExpediente: expedienteDia.start,
+            fimExpediente: expedienteDia.end,
+            duracaoServicoMinutos,
+            passoMinutos: configuracao.intervaloMinutos,
+            ocupados: intervalosOcupados,
+          }).map((slot) => {
+            const antecedenciaOk = configuracao.antecedenciaMinutos === 0
+              || new Date(`${data}T${slot.horario}:00`).getTime()
+                >= Date.now() + configuracao.antecedenciaMinutos * 60_000;
+            return antecedenciaOk
+              ? slot
+              : { ...slot, disponivel: false, motivoIndisponibilidade: 'Antecedência mínima não atendida' };
+          })
+        : [];
 
       res.json({
         profissional: {
           id: profissional.id,
           nome: profissional.nome,
-          expediente: `${profissional.horarioInicioExpediente} - ${profissional.horarioFimExpediente}`,
+          expediente: expedienteDia.open ? `${expedienteDia.start} - ${expedienteDia.end}` : 'Fechado',
         },
         data,
         servico: servicoSelecionado

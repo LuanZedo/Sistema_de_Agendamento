@@ -36,6 +36,8 @@ app.get('/', (_req, res) => {
         listar: 'GET /api/agendamentos',
         consultarStatus: 'GET /api/agendamentos/:id',
         realizar: 'POST /api/agendamentos',
+        editarDataHorario: 'PATCH /api/agendamentos/:id',
+        remover: 'DELETE /api/agendamentos/:id',
         confirmar: 'PATCH /api/agendamentos/:id/confirmar',
         cancelar: 'PATCH /api/agendamentos/:id/cancelar',
       },
