@@ -13,8 +13,8 @@ O **HoraCerta** é uma solução web voltada para profissionais autônomos e peq
 -   **Choque de Horários:** Prevenção automática de sobreposição de atendimentos no mesmo horário.
     
 -   **Desorganização de Registros:** Facilidade na visualização da agenda e histórico dos atendimentos.
-    
 
+    
 ## Integrantes da Equipe
 
 -   **Michel Vieira**
@@ -69,51 +69,38 @@ A documentação arquitetural completa do projeto encontra-se nas pastas [`/docs
 
 ## Capturas de Tela / Protótipos
 
-**Tela de Agendamento**
-
-**Painel do Prestador**
+<img width="1536" height="1024" alt="Mockup do Sistema" src="https://github.com/user-attachments/assets/19a17e06-07b6-4f7a-ae81-75d2b7b9537e" />
 
 ## Instruções de Instalação e Execução
 
 ### Pré-requisitos
 - [Node.js](https://nodejs.org/) (v18 ou superior)
 
-### Passo a Passo (Backend e Banco de Dados)
+### Passo a Passo:
 
+1. Acessar a pasta do backend
 ```bash
-# 1. Acessar a pasta do backend
 cd backend
-
-# 2. Instalar as dependências
+```
+2. Instalar as dependências
+```bash
 npm install
-
-# 3. Criar as tabelas do banco de dados e popular com os dados iniciais do protótipo
+```
+3. Criar as tabelas do banco de dados e popular com os dados iniciais do protótipo
+```bash
 npm run setup
-
-# 4. Iniciar o servidor da API em http://localhost:3333
+```
+4. Iniciar o servidor da API em http://localhost:3333
+```bash
 npm run dev
 ```
-
-### Para quem vai trabalhar no Frontend
-
-O frontend e a API são dois servidores separados. Para desenvolver e testar a integração:
-
-1. **Terminal 1 — iniciar o backend** (na primeira vez, instale e prepare o banco):
-   ```bash
-   cd backend
-   npm install
-   npm run setup
-   npm run dev
-   ```
-   Deixe esse terminal aberto. A API ficará disponível em `http://localhost:3333`.
-2. **Terminal 2 — abrir o frontend:** na raiz do repositório, inicie o Live Server pelo VS Code abrindo `frontend/index.html`. Acesse `http://127.0.0.1:5501/frontend/`.
+5. Deixe esse terminal aberto. A API ficará disponível em `http://localhost:3333`.
+6. Na raiz do repositório, inicie o Live Server abrindo `frontend/index.html`.
 
 O frontend já usa `http://localhost:3333` como endereço padrão da API. Se a API estiver em outro endereço, defina `window.API_BASE_URL` antes do script principal em `frontend/index.html`. Sem o backend ativo, as telas que dependem de dados da API não funcionarão.
-
-> 💡 **Para a equipe de Frontend:** Consulte o arquivo [`backend/README.md`](./backend/README.md) para ver os exemplos prontos de `fetch` e respostas JSON para cada tela do protótipo!
 
 ## Planejamento e Gestão do Projeto
 
 Acompanhe a evolução das tarefas e a divisão de responsabilidades da equipe através do nosso quadro público de gerenciamento:
 
-🔗  [**Acessar Quadro do Trello**](https://trello.com/invite/b/6aea050312bd3bc012008ff9/ATTI7500ebf7a52abb946739eb10ee70cd3aE100B881/meu-quadro-do-trello)
+- [**Acessar Quadro do Trello**](https://trello.com/invite/b/6aea050312bd3bc012008ff9/ATTI7500ebf7a52abb946739eb10ee70cd3aE100B881/meu-quadro-do-trello)
